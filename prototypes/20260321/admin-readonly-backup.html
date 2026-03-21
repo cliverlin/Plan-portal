@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ko-KR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>백업 저장소 관리 — UI 프로토타입 v1.0 (읽기 전용 부서관리자 처리)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Noto Sans KR',-apple-system,sans-serif;color:#222;background:#f5f5f8;font-size:13px;-webkit-font-smoothing:antialiased}
+  .app-shell{display:flex;height:100vh;overflow:hidden}
+  .sidebar{width:220px;background:#1e2532;color:#b8c0cc;flex-shrink:0;overflow-y:auto;padding:16px 0}
+  .sidebar-title{font-size:13px;font-weight:600;color:#fff;padding:0 16px;margin-bottom:16px}
+  .sidebar-section{padding:6px 0}
+  .sidebar-section-label{font-size:11px;font-weight:600;color:#667;padding:4px 16px;letter-spacing:.05em}
+  .sidebar-item{padding:7px 16px 7px 24px;font-size:12.5px;cursor:pointer;transition:background .15s}
+  .sidebar-item:hover{background:rgba(255,255,255,.06)}
+  .sidebar-item.active{background:rgba(255,255,255,.1);color:#fff;font-weight:500}
+  .main-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
+  .topbar{height:48px;background:#fff;border-bottom:1px solid #e2e2e8;display:flex;align-items:center;padding:0 24px;font-size:13px;color:#888;flex-shrink:0}
+  .breadcrumb{display:flex;align-items:center;gap:6px}
+  .breadcrumb span{color:#bbb}.breadcrumb .current{color:#222;font-weight:500}
+  .content-area{flex:1;overflow-y:auto;padding:24px 32px 60px}
+  .page-title{font-size:18px;font-weight:700;color:#111;margin-bottom:8px}
+  .page-desc{font-size:13px;color:#888;margin-bottom:24px}
+
+  /* 읽기 전용 배너 */
+  .readonly-banner{background:#f8f4ee;border:1px solid #e8d8c0;border-radius:6px;padding:12px 16px;font-size:12.5px;color:#9a7830;margin-bottom:20px;display:none;align-items:center;gap:8px;line-height:1.6}
+  .readonly-banner.show{display:flex}
+
+  /* 저장소 현황 카드 */
+  .storage-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px}
+  .storage-card{background:#fff;border:1px solid #e2e2e8;border-radius:10px;padding:20px 24px}
+  .storage-card-title{font-size:13px;font-weight:600;color:#333;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+  .storage-card-title .icon{font-size:16px;color:#888}
+  .storage-card-size{font-size:15px;font-weight:700;color:#111;margin-bottom:12px}
+  .progress-bar{height:8px;background:#e8e8ec;border-radius:8px;overflow:hidden;position:relative;margin-bottom:8px}
+  .progress-fill{height:100%;border-radius:8px;transition:width .3s}
+  .progress-fill.danger{background:linear-gradient(90deg,#ef4444,#f87171)}
+  .progress-fill.normal{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+  .progress-marker{position:absolute;top:-2px;width:3px;height:12px;background:#666;border-radius:2px}
+  .storage-meta{display:flex;justify-content:space-between;font-size:12px}
+  .storage-meta .used{color:#ef4444;font-weight:500}
+  .storage-meta .used.normal{color:#3b82f6}
+  .storage-meta .remain{color:#888}
+  .storage-warning{margin-top:10px;padding:10px 12px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;font-size:12px;color:#b91c1c;display:flex;align-items:flex-start;gap:8px;line-height:1.5}
+  .storage-warning .dot{width:8px;height:8px;border-radius:50%;background:#ef4444;flex-shrink:0;margin-top:4px}
+
+  /* 설정 영역 */
+  .settings-section{background:#fff;border:1px solid #e2e2e8;border-radius:10px;padding:0}
+  .setting-row{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid #f0f0f4;position:relative}
+  .setting-row:last-child{border-bottom:none}
+  .setting-left{display:flex;flex-direction:column;gap:4px}
+  .setting-label{font-size:13px;font-weight:600;color:#333;display:flex;align-items:center;gap:6px}
+  .setting-desc{font-size:12px;color:#999}
+  .info-icon{width:16px;height:16px;border-radius:50%;background:#e5e7eb;display:inline-flex;align-items:center;justify-content:center;font-size:10px;color:#888;cursor:help}
+
+  /* 토글 */
+  .toggle-switch{position:relative;width:44px;height:24px;flex-shrink:0}
+  .toggle-switch input{opacity:0;width:0;height:0;position:absolute}
+  .toggle-slider{position:absolute;inset:0;cursor:pointer;border-radius:24px;background:#d0d0d8;transition:all .2s}
+  .toggle-slider::before{content:'';position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:all .2s;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+  .toggle-switch input:checked+.toggle-slider{background:#4a7cff}
+  .toggle-switch input:checked+.toggle-slider::before{transform:translateX(20px)}
+  .toggle-switch input:disabled+.toggle-slider{opacity:.5;cursor:not-allowed}
+
+  /* 셀렉트 */
+  .select-box{padding:8px 14px;border:1px solid #d0d0d8;border-radius:6px;font-size:13px;background:#fff;font-family:inherit;cursor:pointer;min-width:100px;outline:none}
+  .select-box:disabled{background:#f4f4f6;cursor:not-allowed;opacity:.55;color:#666}
+
+  /* hover tooltip */
+  .ro-tip-wrap{position:relative}
+  .ro-tip{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#1f2937;color:#fff;font-size:11px;padding:6px 12px;border-radius:5px;white-space:nowrap;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+  .ro-tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#1f2937}
+  .ro-tip-wrap:hover .ro-tip{display:block}
+
+  .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);background:#333;color:#fff;padding:10px 24px;border-radius:8px;font-size:13px;opacity:0;transition:all .3s;z-index:2000;white-space:nowrap}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .proto-badge{position:fixed;top:8px;right:12px;background:#ff6b35;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;z-index:9999;letter-spacing:.05em}
+  .role-switcher{position:fixed;bottom:16px;right:16px;background:#fff;border:1px solid #e2e2e8;border-radius:8px;padding:10px 14px;box-shadow:0 4px 16px rgba(0,0,0,.1);z-index:999;font-size:12px}
+  .role-switcher .role-label{font-weight:600;margin-bottom:6px;color:#666;font-size:11px}
+  .role-switcher .role-btns{display:flex;gap:4px}
+  .role-btn{padding:5px 10px;border-radius:4px;border:1px solid #d0d0d8;background:#fff;cursor:pointer;font-size:11.5px;font-family:inherit;font-weight:500;transition:all .15s}
+  .role-btn.active{background:#4a7cff;color:#fff;border-color:#4a7cff}
+</style>
+</head>
+<body>
+<div class="proto-badge">PROTOTYPE v1.0</div>
+<div class="role-switcher">
+  <div class="role-label">관리자 역할 전환</div>
+  <div class="role-btns">
+    <button class="role-btn active" onclick="switchRole('admin')">전체 관리자</button>
+    <button class="role-btn" onclick="switchRole('dept')">부서관리자</button>
+  </div>
+</div>
+
+<div class="app-shell">
+  <div class="sidebar">
+    <div class="sidebar-title">공통 정책센터</div>
+    <div class="sidebar-section"><div class="sidebar-section-label">공통</div><div class="sidebar-item">민감정보 패턴 관리 그룹</div><div class="sidebar-item">사외 정책 IP 관리</div></div>
+    <div class="sidebar-section"><div class="sidebar-section-label">정보유출방지</div><div class="sidebar-item">개별 매체 관리</div><div class="sidebar-item">파일첨부 확장자 관리 그룹</div><div class="sidebar-item">워터마크 관리</div><div class="sidebar-item">에이전트 정책 표시 설정</div></div>
+    <div class="sidebar-section"><div class="sidebar-section-label">민감정보 보호</div><div class="sidebar-item">문서 분류 관리</div><div class="sidebar-item">예외 관리 그룹</div></div>
+    <div class="sidebar-section"><div class="sidebar-section-label">취약점 점검</div><div class="sidebar-item">점검 항목 관리 그룹</div><div class="sidebar-item">보안등급 설정</div></div>
+    <div class="sidebar-section"><div class="sidebar-section-label">업무환경관리</div><div class="sidebar-item">실행 제어 소프트웨어 관리</div><div class="sidebar-item">소프트웨어 자산 관리 그룹</div></div>
+    <div class="sidebar-section"><div class="sidebar-section-label">백업</div><div class="sidebar-item active">백업 저장소 관리</div><div class="sidebar-item">백업 알림 수신 관리</div></div>
+  </div>
+
+  <div class="main-area">
+    <div class="topbar"><div class="breadcrumb">서비스 <span>›</span> 정책 <span>›</span> 공통 정책센터 <span>›</span> <span class="current">백업 저장소 관리</span></div></div>
+    <div class="content-area">
+
+      <h1 class="page-title">백업 저장소 관리</h1>
+
+      <!-- 읽기 전용 배너 -->
+      <div class="readonly-banner" id="roBanner">
+        🔒 이 설정은 전체 관리자만 변경할 수 있습니다. 현재 설정값을 확인할 수 있습니다.
+      </div>
+
+      <p class="page-desc">백업 저장소 용량을 확인하고 관리할 수 있습니다.</p>
+
+      <!-- 저장소 현황 -->
+      <div class="storage-cards">
+        <div class="storage-card">
+          <div class="storage-card-title"><span class="icon">🗄️</span> 기본 저장소</div>
+          <div class="storage-card-size">1.68 GB</div>
+          <div class="progress-bar">
+            <div class="progress-fill danger" style="width:100%"></div>
+            <div class="progress-marker" style="left:70%"></div>
+          </div>
+          <div class="storage-meta">
+            <span class="used">25.87 GB 사용됨</span>
+            <span class="remain">0 byte 남음</span>
+          </div>
+          <div class="storage-warning">
+            <span class="dot"></span>
+            <span>저장 공간이 모두 사용되었습니다.<br>파일 업로드가 제한될 수 있으니 백업 파일을 정리해주세요.</span>
+          </div>
+        </div>
+        <div class="storage-card">
+          <div class="storage-card-title"><span class="icon">📥</span> 월간 다운로드 용량</div>
+          <div class="storage-card-size">931.32 GB</div>
+          <div class="progress-bar">
+            <div class="progress-fill normal" style="width:2.4%"></div>
+            <div class="progress-marker" style="left:70%"></div>
+          </div>
+          <div class="storage-meta">
+            <span class="used normal">22.06 GB 사용됨</span>
+            <span class="remain">909.26 GB 남음</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 설정 항목 -->
+      <div class="settings-section">
+        <div class="setting-row">
+          <div class="setting-left">
+            <div class="setting-label">저장시 파일 암호화 <span class="info-icon" title="백업 파일을 암호화하여 저장합니다.">?</span></div>
+          </div>
+          <div class="ro-tip-wrap" id="tipWrap1">
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggleEncrypt">
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="ro-tip" id="tip1">이 설정은 전체 관리자만 변경할 수 있습니다.</span>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-left">
+            <div class="setting-label">저장소 용량 임계치 설정</div>
+            <div class="setting-desc">저장소 용량 임계치 설정 시 대시보드에 임계치 선이 표시됩니다.</div>
+          </div>
+          <div class="ro-tip-wrap" id="tipWrap2">
+            <select class="select-box" id="selectThreshold">
+              <option>50%</option><option>60%</option><option selected>70%</option><option>80%</option><option>90%</option>
+            </select>
+            <span class="ro-tip" id="tip2">이 설정은 전체 관리자만 변경할 수 있습니다.</span>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-left">
+            <div class="setting-label">임계치 초과 시 관리자 알림</div>
+          </div>
+          <div class="ro-tip-wrap" id="tipWrap3">
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggleAlert">
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="ro-tip" id="tip3">이 설정은 전체 관리자만 변경할 수 있습니다.</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let role = 'admin';
+
+function switchRole(r) {
+  role = r;
+  document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  applyRole();
+}
+
+function applyRole() {
+  const isRO = role === 'dept';
+
+  // 배너
+  document.getElementById('roBanner').classList.toggle('show', isRO);
+
+  // 토글
+  document.getElementById('toggleEncrypt').disabled = isRO;
+  document.getElementById('toggleAlert').disabled = isRO;
+
+  // 셀렉트
+  document.getElementById('selectThreshold').disabled = isRO;
+
+  // tooltip 표시 여부 (부서관리자일 때만 hover 동작)
+  ['tipWrap1','tipWrap2','tipWrap3'].forEach(id => {
+    const wrap = document.getElementById(id);
+    if (isRO) {
+      wrap.classList.add('ro-tip-wrap');
+    } else {
+      wrap.classList.remove('ro-tip-wrap');
+    }
+  });
+
+  // tooltip 요소 자체 표시/숨김 제어
+  ['tip1','tip2','tip3'].forEach(id => {
+    document.getElementById(id).style.display = isRO ? '' : 'none';
+  });
+}
+
+// 전체 관리자 설정 변경 시 Toast
+document.getElementById('toggleEncrypt').addEventListener('change', function() {
+  if (role === 'admin') showToast(this.checked ? '파일 암호화를 활성화하였습니다.' : '파일 암호화를 비활성화하였습니다.');
+});
+document.getElementById('toggleAlert').addEventListener('change', function() {
+  if (role === 'admin') showToast(this.checked ? '임계치 초과 알림을 활성화하였습니다.' : '임계치 초과 알림을 비활성화하였습니다.');
+});
+document.getElementById('selectThreshold').addEventListener('change', function() {
+  if (role === 'admin') showToast(`저장소 용량 임계치를 ${this.value}로 변경하였습니다.`);
+});
+
+function showToast(m) {
+  const t = document.getElementById('toast');
+  t.textContent = m; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// 초기 상태
+applyRole();
+</script>
+</body>
+</html>

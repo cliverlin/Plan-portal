@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>업무환경관리 대시보드 — 프로토타입 v2.1</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+tailwind.config={theme:{extend:{colors:{
+  brand:{50:'#f0f4ff',100:'#e0e9ff',500:'#4a6cf7',600:'#3b5de7',700:'#2d4ed8'},
+  danger:{50:'#fef2f2',100:'#fee2e2',500:'#ef4444',600:'#dc2626'},
+  warn:{50:'#fffbeb',100:'#fef3c7',500:'#f59e0b',600:'#d97706'},
+  ok:{50:'#f0fdf4',100:'#dcfce7',500:'#22c55e',600:'#16a34a'},
+  g:{50:'#f8fafc',100:'#f1f5f9',200:'#e2e8f0',300:'#cbd5e1',400:'#94a3b8',500:'#64748b',600:'#475569',700:'#334155',800:'#1e293b',900:'#0f172a'}
+}}}}
+</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap');
+*{font-family:'Noto Sans KR',sans-serif;margin:0;padding:0;box-sizing:border-box}
+body{background:#f3f4f6;color:#1e293b}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px}
+.card-hover:hover{box-shadow:0 2px 12px rgba(0,0,0,.06);transform:translateY(-1px)}
+.card-hover{transition:all .15s}
+.tab-btn{padding:6px 14px;font-size:12px;font-weight:500;border:1px solid #e5e7eb;background:#fff;color:#64748b;cursor:pointer;transition:all .1s}
+.tab-btn.active{background:#1e293b;color:#fff;border-color:#1e293b}
+.tab-btn:first-child{border-radius:6px 0 0 6px}
+.tab-btn:last-child{border-radius:0 6px 6px 0}
+.tab-btn:not(:first-child){border-left:none}
+.toggle-btn{padding:4px 12px;font-size:11px;font-weight:500;border:1px solid #e5e7eb;background:#fff;color:#64748b;cursor:pointer}
+.toggle-btn.active{background:#1e293b;color:#fff;border-color:#1e293b}
+.toggle-btn:first-child{border-radius:5px 0 0 5px}
+.toggle-btn:last-child{border-radius:0 5px 5px 0}
+.toggle-btn:not(:first-child){border-left:none}
+.progress-bar{height:8px;border-radius:4px;background:#e5e7eb;overflow:hidden}
+.progress-fill{height:100%;border-radius:4px;transition:width .5s}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 16px;color:#94a3b8;text-align:center}
+.overview-card{cursor:default}
+.overview-card .delta-up{color:#dc2626}
+.overview-card .delta-down{color:#16a34a}
+.sidebar-link{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;font-size:13px;color:#475569;cursor:pointer;transition:background .1s}
+.sidebar-link:hover{background:#f1f5f9}
+.sidebar-link.active{background:#4a6cf7;color:#fff}
+.section-divider{display:flex;align-items:center;gap:8px;padding:8px 0;margin-bottom:12px}
+.section-divider .label{font-size:13px;font-weight:700;color:#334155}
+.section-divider::after{content:'';flex:1;height:1px;background:#e5e7eb}
+.rank-num{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.rank-num.top3{background:#1e293b;color:#fff}
+.rank-num.normal{background:#f1f5f9;color:#64748b}
+.case-btn{font-size:11px;padding:4px 8px;border-radius:4px;border:1px solid #475569;color:#e2e8f0;background:transparent;cursor:pointer;transition:all .1s}
+.case-btn.active{background:#4a6cf7;border-color:#4a6cf7;color:#fff}
+.case-btn:hover:not(.active){background:#334155}
+.dd-select{font-size:12px;border:1px solid #e5e7eb;border-radius:6px;padding:5px 10px;color:#334155;background:#fff;cursor:pointer;font-weight:500}
+.dd-select:focus{outline:none;border-color:#4a6cf7}
+</style>
+</head>
+<body>
+
+<!-- 케이스 전환 패널 -->
+<div id="ctrlPanel" class="fixed top-3 right-3 z-50 bg-g-800 text-white p-3 rounded-xl shadow-2xl" style="max-width:300px">
+  <div class="text-[10px] font-bold text-g-400 mb-2 tracking-wider">CASE SWITCH</div>
+  <div class="flex flex-wrap gap-1">
+    <button onclick="applyCase('normal')" class="case-btn active" data-c="normal">기본 (데이터 있음)</button>
+    <button onclick="applyCase('empty')" class="case-btn" data-c="empty">전체 데이터 없음</button>
+  </div>
+</div>
+
+<div class="flex min-h-screen">
+<!-- ─── 사이드바 ─── -->
+<aside class="w-52 bg-white border-r border-g-200 flex-shrink-0 py-5 px-3">
+  <div class="px-3 mb-6">
+    <div class="text-base font-extrabold text-white bg-g-900 px-3 py-2 rounded-lg inline-block">업무환경관리</div>
+  </div>
+  <nav class="space-y-1">
+    <div class="sidebar-link active"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>대시보드</div>
+    <div class="px-3 mt-4 mb-1 text-[10px] font-bold text-g-400 tracking-wider">로그</div>
+    <div class="sidebar-link text-sm">소프트웨어 실행 제어 내역</div>
+    <div class="sidebar-link text-sm">웹사이트 접속 제어 내역</div>
+    <div class="px-3 mt-4 mb-1 text-[10px] font-bold text-g-400 tracking-wider">정책</div>
+    <div class="sidebar-link text-sm">회사 기본 정책</div>
+    <div class="sidebar-link text-sm">그룹 정책</div>
+  </nav>
+</aside>
+
+<!-- ─── 메인 ─── -->
+<main class="flex-1 overflow-auto">
+  <div class="bg-white border-b border-g-200 px-6 py-3 flex items-center justify-end sticky top-0 z-30">
+    <div class="flex items-center gap-2">
+      <span class="text-xs text-g-500">통계 기간 :</span>
+      <select class="dd-select"><option>7일</option><option>14일</option><option>30일</option></select>
+    </div>
+  </div>
+
+  <div class="p-6 space-y-5">
+
+    <!-- ═══ 개요 카드 4종 ═══ -->
+    <div class="grid grid-cols-4 gap-4" id="overviewCards">
+      <div class="card p-5 card-hover overview-card">
+        <div class="text-xs text-g-500 font-medium mb-1">소프트웨어 실행 차단</div>
+        <div class="flex items-end justify-between">
+          <div class="text-3xl font-extrabold text-g-800 tracking-tight" id="oc1v">2313 <span class="text-base font-semibold text-g-400">만</span></div>
+          <span class="text-xs font-bold delta-up" id="oc1d">↗156.7%</span>
+        </div>
+        <div class="mt-2 h-7"><canvas id="spark1"></canvas></div>
+      </div>
+      <div class="card p-5 card-hover overview-card">
+        <div class="text-xs text-g-500 font-medium mb-1">소프트웨어 실행 경고</div>
+        <div class="flex items-end justify-between">
+          <div class="text-3xl font-extrabold text-g-800 tracking-tight" id="oc2v">1.7 <span class="text-base font-semibold text-g-400">천</span></div>
+          <span class="text-xs font-bold delta-up" id="oc2d">↗56.1%</span>
+        </div>
+      </div>
+      <div class="card p-5 card-hover overview-card">
+        <div class="text-xs text-g-500 font-medium mb-1">웹사이트 접속 차단</div>
+        <div class="flex items-end justify-between">
+          <div class="text-3xl font-extrabold text-g-800 tracking-tight" id="oc3v">231</div>
+          <span class="text-xs font-bold delta-up" id="oc3d">↗156.7%</span>
+        </div>
+      </div>
+      <div class="card p-5 card-hover overview-card">
+        <div class="text-xs text-g-500 font-medium mb-1">웹사이트 접속 경고</div>
+        <div class="flex items-end justify-between">
+          <div class="text-3xl font-extrabold text-g-800 tracking-tight" id="oc4v">301</div>
+          <span class="text-xs font-bold delta-down" id="oc4d">↘0.1%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ 현재 현황 ═══ -->
+    <div>
+      <div class="section-divider"><span class="label">현재 현황</span></div>
+      <div class="grid grid-cols-3 gap-4">
+        <!-- SW 라이선스 -->
+        <div class="card p-5">
+          <h3 class="text-sm font-bold text-g-700 mb-4">SW 라이선스 현황</h3>
+          <div id="swNormal">
+            <div class="flex items-center gap-5 mb-5">
+              <div class="relative w-28 h-28 flex-shrink-0">
+                <canvas id="donutLic"></canvas>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                  <span class="text-[10px] text-g-400">등록율</span>
+                  <span class="text-xl font-extrabold text-g-800" id="licPct">72%</span>
+                  <span class="text-[10px] text-g-400" id="licCnt">72/100</span>
+                </div>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <div class="flex justify-between py-2 px-3 bg-g-50 rounded-lg"><span class="text-xs text-g-600">초과 설치 SW</span><span class="text-sm font-bold text-g-800" id="swE1">12건</span></div>
+              <div class="flex justify-between py-2 px-3 bg-g-50 rounded-lg"><span class="text-xs text-g-600">삭제 권고 SW</span><span class="text-sm font-bold text-g-800" id="swE2">8건</span></div>
+              <div class="flex justify-between py-2 px-3 bg-g-50 rounded-lg"><span class="text-xs text-g-600">미설치 SW</span><span class="text-sm font-bold text-g-800" id="swE3">3건</span></div>
+            </div>
+          </div>
+        </div>
+        <!-- HW 자산 -->
+        <div class="card p-5">
+          <h3 class="text-sm font-bold text-g-700 mb-4">HW 자산 운영 현황</h3>
+          <div id="hwNormal">
+            <div class="mb-4">
+              <div class="w-full h-5 rounded-full overflow-hidden flex" id="hwBar">
+                <div class="bg-g-700 h-full" style="width:30%"></div>
+                <div class="bg-g-400 h-full" style="width:20%"></div>
+                <div class="bg-warn-400 h-full" style="width:20%"></div>
+                <div class="bg-g-300 h-full" style="width:15%"></div>
+                <div class="bg-g-200 h-full" style="width:15%"></div>
+              </div>
+              <div class="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[10px] text-g-500">
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-g-700"></span>사용중 30%</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-g-400"></span>보관 20%</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-warn-400"></span>반납예정 20%</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-g-300"></span>반납지연 15%</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-g-200"></span>미등록 15%</span>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <div class="flex justify-between py-2 px-3 bg-g-50 rounded-lg"><span class="text-xs text-g-600">반납 지연</span><span class="text-sm font-bold text-g-800" id="hwR1">12건</span></div>
+              <div class="flex justify-between py-2 px-3 bg-g-50 rounded-lg"><span class="text-xs text-g-600">반납 예정 (D-7)</span><span class="text-sm font-bold text-g-800" id="hwR2">8건</span></div>
+              <div class="flex justify-between py-2 px-3 bg-g-50 rounded-lg"><span class="text-xs text-g-600">미등록 PC</span><span class="text-sm font-bold text-g-800" id="hwR3">3건</span></div>
+            </div>
+          </div>
+        </div>
+        <!-- PC 보안 -->
+        <div class="card p-5">
+          <h3 class="text-sm font-bold text-g-700 mb-4">PC 보안 현황</h3>
+          <div class="space-y-4" id="pcBars">
+            <div>
+              <div class="flex justify-between mb-1"><span class="text-xs text-g-600">방화벽 (사용 <span class="pc-a">460</span> / 미사용 <span class="pc-b">40</span>)</span><span class="text-xs font-bold text-ok-600 pc-pct">92%</span></div>
+              <div class="progress-bar"><div class="progress-fill bg-ok-500 pc-bar" style="width:92%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between mb-1"><span class="text-xs text-g-600">바이러스 백신 (설치 <span class="pc-a">440</span> / 미설치 <span class="pc-b">60</span>)</span><span class="text-xs font-bold text-ok-600 pc-pct">88%</span></div>
+              <div class="progress-bar"><div class="progress-fill bg-ok-500 pc-bar" style="width:88%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between mb-1"><span class="text-xs text-g-600">자동 업데이트 (사용 <span class="pc-a">375</span> / 미사용 <span class="pc-b">125</span>)</span><span class="text-xs font-bold text-warn-600 pc-pct">75%</span></div>
+              <div class="progress-bar"><div class="progress-fill bg-warn-500 pc-bar" style="width:75%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between mb-1"><span class="text-xs text-g-600">공유폴더 미사용 (사용 <span class="pc-a">425</span> / 미사용 <span class="pc-b">475</span>)</span><span class="text-xs font-bold text-ok-600 pc-pct">95%</span></div>
+              <div class="progress-bar"><div class="progress-fill bg-ok-500 pc-bar" style="width:95%"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ 제어 추이 + 카테고리별 차단 ═══ -->
+    <div class="grid grid-cols-5 gap-4">
+      <div class="col-span-3 card p-5">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-4">
+            <h3 class="text-sm font-bold text-g-700">제어 추이</h3>
+            <div class="flex items-center gap-3 text-[11px] text-g-500">
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-danger-500"></span>차단</span>
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-warn-500"></span>경고</span>
+            </div>
+          </div>
+          <div class="flex">
+            <button onclick="switchTrend('sw')" class="tab-btn active" data-tr="sw">소프트웨어</button>
+            <button onclick="switchTrend('web')" class="tab-btn" data-tr="web">웹사이트</button>
+          </div>
+        </div>
+        <div style="height:200px"><canvas id="trendChart"></canvas></div>
+      </div>
+      <div class="col-span-2 card p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-bold text-g-700">카테고리별 차단</h3>
+          <div class="flex">
+            <button onclick="switchCat('sw')" class="tab-btn active" data-ct="sw">소프트웨어</button>
+            <button onclick="switchCat('web')" class="tab-btn" data-ct="web">웹사이트</button>
+          </div>
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="w-36 h-36 flex-shrink-0"><canvas id="catChart"></canvas></div>
+          <div class="text-xs text-g-600 space-y-1.5" id="catLegend">
+            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-sm" style="background:#6366f1"></span>웹하드(P2P)<span class="ml-auto font-semibold">9%</span></div>
+            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-sm" style="background:#3b82f6"></span>클라우드 스토리지<span class="ml-auto font-semibold">21%</span></div>
+            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-sm" style="background:#ef4444"></span>메트로 앱<span class="ml-auto font-semibold">8%</span></div>
+            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-sm" style="background:#f59e0b"></span>오피스 제품군<span class="ml-auto font-semibold">38%</span></div>
+            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-sm" style="background:#8b5cf6"></span>FTP 유틸리티<span class="ml-auto font-semibold">16%</span></div>
+            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-sm" style="background:#cbd5e1"></span>그 외<span class="ml-auto font-semibold">8%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ TOP 3열 ═══ -->
+    <div class="grid grid-cols-3 gap-4">
+      <!-- 차단 TOP 7 -->
+      <div class="card p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-g-700">차단 TOP 7</h3>
+          <select class="dd-select" id="blockDd" onchange="switchBlockDd()">
+            <option value="win">Windows 프로세스</option>
+            <option value="mac">Mac 프로세스</option>
+            <option value="domain">도메인</option>
+          </select>
+        </div>
+        <div id="blockContent"><table class="w-full text-xs"><tbody id="blockList"></tbody></table></div>
+        <div id="blockEmpty" class="hidden empty-state py-10"><p class="text-xs text-g-400">내역이 없습니다.</p></div>
+      </div>
+      <!-- 현재 라이선스 초과 SW TOP 7 -->
+      <div class="card p-5">
+        <h3 class="text-sm font-bold text-g-700 mb-3">현재 라이선스 초과 SW TOP 7</h3>
+        <div id="licContent"><table class="w-full text-xs"><tbody id="licList"></tbody></table></div>
+        <div id="licEmpty" class="hidden empty-state py-10"><p class="text-xs text-g-400">내역이 없습니다.</p></div>
+      </div>
+      <!-- 현재 반납 지연 자산 TOP 7 -->
+      <div class="card p-5">
+        <h3 class="text-sm font-bold text-g-700 mb-3">현재 반납 지연 자산 TOP 7</h3>
+        <div id="retContent"><table class="w-full text-xs"><tbody id="retList"></tbody></table></div>
+        <div id="retEmpty" class="hidden empty-state py-10"><p class="text-xs text-g-400">내역이 없습니다.</p></div>
+      </div>
+    </div>
+
+    <!-- ═══ 제어 사용자 TOP 10 병렬 ═══ -->
+    <div class="grid grid-cols-2 gap-4">
+      <div class="card p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-g-700">소프트웨어 제어 사용자 TOP 10</h3>
+          <div class="flex">
+            <button class="toggle-btn active">차단</button>
+            <button class="toggle-btn">경고</button>
+          </div>
+        </div>
+        <div id="userSwContent"><table class="w-full text-xs" id="userSwTable"></table></div>
+        <div id="userSwEmpty" class="hidden empty-state py-10"><p class="text-xs text-g-400">내역이 없습니다.</p></div>
+      </div>
+      <div class="card p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-g-700">웹사이트 제어 사용자 TOP 10</h3>
+          <div class="flex">
+            <button class="toggle-btn active">차단</button>
+            <button class="toggle-btn">경고</button>
+          </div>
+        </div>
+        <div id="userWebContent"><table class="w-full text-xs" id="userWebTable"></table></div>
+        <div id="userWebEmpty" class="hidden empty-state py-10"><p class="text-xs text-g-400">내역이 없습니다.</p></div>
+      </div>
+    </div>
+
+  </div>
+</main>
+</div>
+
+<script>
+// ─── 데이터 ───
+const blockDataWin=[['filetourDown.exe','3,203 건'],['zFTPServerAdmin.exe','2,301 건'],['Hayan.exe','1,329 건'],['Hworkard.exe','237 건'],['JungUmGW.exe','210 건'],['JungUmGW.exe','210 건'],['JungUmGW.exe','210 건']];
+const blockDataMac=[['Finder Helper','1,820 건'],['Safari Extension','1,203 건'],['Terminal Agent','987 건'],['Spotlight Importer','542 건'],['mdworker_shared','321 건']];
+const blockDataDomain=[['*.torrent-site.com','4,102 건'],['*.gambling-site.net','3,287 건'],['*.adult-content.com','2,456 건'],['*.free-vpn.io','1,893 건'],['*.cloud-share.xyz','1,234 건'],['*.proxy-server.net','987 건'],['*.crack-download.com','654 건']];
+const licData=[['PhotoEditor Pro','관리그룹3','3,203 건'],['AutoCAD 2025','관리그룹2','2,301 건'],['Figma Desktop','기획SW','1,329 건'],['MS Office 365','관리그룹1','237 건'],['Notion Desktop','관리그룹3','210 건'],['Sketch App','관리그룹1','210 건'],['JetBrains IDE','관리그룹1','210 건']];
+const retData=[['NB-A001','이도연 연구소','-111일'],['MT-B002','이도형 기획팀','-30일'],['MT-B003','이도형 기획팀','-20일'],['MT-B004','이도형 기획팀','-12일'],['MT-B005','이도형 기획팀','-11일'],['NB-A001','이도연 연구소','-10일'],['TA-C111','한규륜 인사팀','-1일']];
+const userData=[['홍길동','기획디자인팀','3,203 건'],['이천수','개발팀','2,301 건'],['주나라','피플팀','1,329 건'],['송국영','영업마케팅팀','237 건'],['박효일','서비스운영팀','210 건'],['홍길동','기획디자인팀','3,203 건'],['이천수','개발팀','2,301 건'],['주나라','피플팀','1,329 건'],['송국영','영업마케팅팀','237 건'],['박효일','서비스운영팀','210 건']];
+
+function renderRank(tbodyId,data,cols){
+  const t=document.getElementById(tbodyId);
+  t.innerHTML=data.map((r,i)=>{
+    const rk=`<td class="py-2 w-8"><div class="rank-num ${i<3?'top3':'normal'}">${i+1}</div></td>`;
+    if(cols===2)return`<tr class="border-b border-g-100">${rk}<td class="py-2 text-g-700">${r[0]}</td><td class="py-2 text-right font-semibold text-g-800">${r[1]}</td></tr>`;
+    return`<tr class="border-b border-g-100">${rk}<td class="py-2"><span class="text-g-700">${r[0]}</span><br><span class="text-[10px] text-g-400">${r[1]}</span></td><td class="py-2 text-right font-semibold text-g-800">${r[2]}</td></tr>`;
+  }).join('');
+}
+function renderUser(tid,data){
+  const t=document.getElementById(tid);
+  t.innerHTML=data.map((r,i)=>`<tr class="border-b border-g-100"><td class="py-2 w-8"><div class="rank-num ${i<3?'top3':'normal'}">${i+1}</div></td><td class="py-2"><div class="flex items-center gap-2"><div class="w-6 h-6 rounded-full bg-g-200 flex items-center justify-center text-[10px] text-g-500">👤</div><div><span class="text-g-700 font-medium">${r[0]}</span> <span class="text-g-400">${r[1]}</span></div></div></td><td class="py-2 text-right font-semibold text-g-800">${r[2]}</td></tr>`).join('');
+}
+
+function switchBlockDd(){
+  const v=document.getElementById('blockDd').value;
+  const d=v==='win'?blockDataWin:v==='mac'?blockDataMac:blockDataDomain;
+  renderRank('blockList',d,2);
+}
+
+// ─── 차트 ───
+function initCharts(){
+  const so={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{display:false},y:{display:false}},elements:{point:{radius:0},line:{borderWidth:1.5}}};
+  new Chart(document.getElementById('spark1'),{type:'line',data:{labels:['','','','','','',''],datasets:[{data:[320,280,350,310,290,340,300],borderColor:'#94a3b8',tension:.4,fill:false}]},options:so});
+  new Chart(document.getElementById('donutLic'),{type:'doughnut',data:{labels:['등록','미등록'],datasets:[{data:[72,28],backgroundColor:['#475569','#e5e7eb'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:true,cutout:'72%',plugins:{legend:{display:false},tooltip:{enabled:false}}}});
+  window.trendChart=new Chart(document.getElementById('trendChart'),{type:'line',data:{labels:['11.01','11.02','11.03','11.04','11.05','11.06','11.07'],datasets:[{label:'차단',data:[280,310,400,350,250,200,180],borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.05)',fill:true,tension:.3,borderWidth:2,pointRadius:3,pointBackgroundColor:'#ef4444'},{label:'경고',data:[120,135,180,150,100,80,70],borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.05)',fill:true,tension:.3,borderWidth:2,pointRadius:3,pointBackgroundColor:'#f59e0b'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'#f1f5f9'},ticks:{font:{size:10}}}}}});
+  window.catChart=new Chart(document.getElementById('catChart'),{type:'doughnut',data:{labels:['웹하드','클라우드','메트로앱','오피스','FTP','그 외'],datasets:[{data:[9,21,8,38,16,8],backgroundColor:['#6366f1','#3b82f6','#ef4444','#f59e0b','#8b5cf6','#cbd5e1'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:true,cutout:'40%',plugins:{legend:{display:false}}}});
+}
+
+function switchTrend(t){document.querySelectorAll('[data-tr]').forEach(b=>b.classList.toggle('active',b.dataset.tr===t));const w=t==='web';window.trendChart.data.datasets[0].data=w?[2400,2200,2600,2450,2300,2700,2500]:[280,310,400,350,250,200,180];window.trendChart.data.datasets[1].data=w?[800,750,900,850,820,880,860]:[120,135,180,150,100,80,70];window.trendChart.update()}
+function switchCat(t){document.querySelectorAll('[data-ct]').forEach(b=>b.classList.toggle('active',b.dataset.ct===t))}
+
+// ─── 케이스 전환 ───
+function applyCase(c){
+  document.querySelectorAll('.case-btn').forEach(b=>b.classList.toggle('active',b.dataset.c===c));
+  const contentIds=['blockContent','licContent','retContent','userSwContent','userWebContent'];
+  const emptyIds=['blockEmpty','licEmpty','retEmpty','userSwEmpty','userWebEmpty'];
+
+  if(c==='empty'){
+    // 개요 카드 0
+    document.getElementById('oc1v').innerHTML='0 <span class="text-base font-semibold text-g-400">건</span>';
+    document.getElementById('oc2v').innerHTML='0 <span class="text-base font-semibold text-g-400">건</span>';
+    document.getElementById('oc3v').innerHTML='0';
+    document.getElementById('oc4v').innerHTML='0';
+    ['oc1d','oc2d','oc3d','oc4d'].forEach(id=>document.getElementById(id).textContent='');
+    // SW 라이선스
+    document.getElementById('licPct').textContent='0%';
+    document.getElementById('licCnt').textContent='0/0';
+    ['swE1','swE2','swE3'].forEach(id=>document.getElementById(id).textContent='0건');
+    // HW
+    document.getElementById('hwBar').innerHTML='<div class="bg-g-200 h-full w-full"></div>';
+    ['hwR1','hwR2','hwR3'].forEach(id=>document.getElementById(id).textContent='0건');
+    // PC 보안
+    document.querySelectorAll('.pc-a').forEach(e=>e.textContent='0');
+    document.querySelectorAll('.pc-b').forEach(e=>e.textContent='0');
+    document.querySelectorAll('.pc-pct').forEach(e=>{e.textContent='0%';e.className='text-xs font-bold text-g-400 pc-pct'});
+    document.querySelectorAll('.pc-bar').forEach(e=>e.style.width='0%');
+    // 리스트
+    contentIds.forEach(id=>document.getElementById(id).classList.add('hidden'));
+    emptyIds.forEach(id=>document.getElementById(id).classList.remove('hidden'));
+  } else {
+    // 복원
+    document.getElementById('oc1v').innerHTML='2313 <span class="text-base font-semibold text-g-400">만</span>';
+    document.getElementById('oc2v').innerHTML='1.7 <span class="text-base font-semibold text-g-400">천</span>';
+    document.getElementById('oc3v').innerHTML='231';
+    document.getElementById('oc4v').innerHTML='301';
+    document.getElementById('oc1d').innerHTML='<span class="delta-up">↗156.7%</span>';
+    document.getElementById('oc2d').innerHTML='<span class="delta-up">↗56.1%</span>';
+    document.getElementById('oc3d').innerHTML='<span class="delta-up">↗156.7%</span>';
+    document.getElementById('oc4d').innerHTML='<span class="delta-down">↘0.1%</span>';
+    document.getElementById('licPct').textContent='72%';
+    document.getElementById('licCnt').textContent='72/100';
+    document.getElementById('swE1').textContent='12건';
+    document.getElementById('swE2').textContent='8건';
+    document.getElementById('swE3').textContent='3건';
+    document.getElementById('hwBar').innerHTML='<div class="bg-g-700 h-full" style="width:30%"></div><div class="bg-g-400 h-full" style="width:20%"></div><div class="bg-warn-400 h-full" style="width:20%"></div><div class="bg-g-300 h-full" style="width:15%"></div><div class="bg-g-200 h-full" style="width:15%"></div>';
+    document.getElementById('hwR1').textContent='12건';
+    document.getElementById('hwR2').textContent='8건';
+    document.getElementById('hwR3').textContent='3건';
+    const pcData=[{a:'460',b:'40',p:'92%',w:'92%',c:'ok'},{a:'440',b:'60',p:'88%',w:'88%',c:'ok'},{a:'375',b:'125',p:'75%',w:'75%',c:'warn'},{a:'425',b:'475',p:'95%',w:'95%',c:'ok'}];
+    const aEls=document.querySelectorAll('.pc-a');
+    const bEls=document.querySelectorAll('.pc-b');
+    const pEls=document.querySelectorAll('.pc-pct');
+    const barEls=document.querySelectorAll('.pc-bar');
+    pcData.forEach((d,i)=>{aEls[i].textContent=d.a;bEls[i].textContent=d.b;pEls[i].textContent=d.p;pEls[i].className=`text-xs font-bold text-${d.c}-600 pc-pct`;barEls[i].style.width=d.w});
+    contentIds.forEach(id=>document.getElementById(id).classList.remove('hidden'));
+    emptyIds.forEach(id=>document.getElementById(id).classList.add('hidden'));
+  }
+}
+
+// ─── 초기화 ───
+renderRank('blockList',blockDataWin,2);
+renderRank('licList',licData,3);
+renderRank('retList',retData,3);
+renderUser('userSwTable',userData);
+renderUser('userWebTable',userData);
+initCharts();
+</script>
+</body>
+</html>

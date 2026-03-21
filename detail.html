@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prototype Detail</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"
+  />
+  <link rel="stylesheet" href="./assets/css/style.css" />
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="bg-blur"></div>
+
+  <header class="topbar">
+    <a href="./index.html" class="brand" style="text-decoration: none;">
+      <div class="brand-text">
+        <div class="brand-title">OfficeKeeper Plan Portal</div>
+      </div>
+    </a>
+  </header>
+
+  <div class="wrap">
+
+    <section class="section" style="margin-top: 10px;">
+      <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+        <a class="btn btn-secondary" href="./index.html" style="height: 36px; min-width: auto; padding: 0 14px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><path d="m15 18-6-6 6-6"/></svg>
+          뒤로 가기
+        </a>
+      </div>
+      <div class="section-head" style="align-items: center;">
+        <div style="display: flex; align-items: baseline; gap: 12px;">
+          <div class="section-title" id="detailTitle" style="margin: 0; font-size: 21px;">프로토타입 상세</div>
+          <div id="detailDate" style="font-size: 14px; color: var(--text-muted); font-weight: 500;"></div>
+        </div>
+      </div>
+
+      <div class="grid" id="cardList"></div>
+    </section>
+
+    <footer class="footer" style="justify-content: center;">
+      <div>© OfficeKeeper Plan Portal</div>
+    </footer>
+  </div>
+
+  <script src="./data/projects.js"></script>
+  <script src="./assets/js/detail.js"></script>
+</body>
+</html>

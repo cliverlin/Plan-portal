@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OfficeKeeper Prototype Portal</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"
+  />
+  <link rel="stylesheet" href="./assets/css/style.css" />
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="bg-blur"></div>
+
+  <header class="topbar">
+    <a href="./index.html" class="brand" style="text-decoration: none;">
+      <div class="brand-text">
+        <div class="brand-title">OfficeKeeper Plan Portal</div>
+      </div>
+    </a>
+  </header>
+
+  <div class="wrap">
+
+    <div class="hero-glow">
+      <h1 class="hero-glow-title">기획 산출물 통합 포탈</h1>
+      <div class="hero-glow-desc">
+        기획 의도를 명확히 공유하고 효율적인 협업을 돕기 위한 포털입니다.<br />
+        최신 프로토타입과 피그마 링크, 주요 기획 산출물을 이곳에서 확인하세요.
+      </div>
+    </div>
+
+    <section class="section" style="margin-top: 10px;">
+      <div class="section-head">
+        <div>
+          <h1 class="section-title" style="color: var(--text-muted); margin: 0 0 8px; font-weight: normal;">Index</h1>
+        </div>
+        <div class="count" id="projectCount">총 0개</div>
+      </div>
+
+      <div class="group-grid" id="projectList"></div>
+    </section>
+
+    <footer class="footer" style="justify-content: center;">
+      <div>© OfficeKeeper Plan Portal</div>
+    </footer>
+  </div>
+
+  <script src="./data/projects.js"></script>
+  <script src="./assets/js/main.js"></script>
+</body>
+</html>

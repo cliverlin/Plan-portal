@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>관리 그룹 적용 UI 프로토타입 — 유형 A + B</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/static/pretendard.min.css" rel="stylesheet">
+<style>
+:root {
+  --bg:#f5f7fa; --surface:#ffffff; --border:#e2e8f0; --border-light:#f0f3f7;
+  --text-1:#1a202c; --text-2:#64748b; --text-3:#94a3b8;
+  --blue-600:#2563eb; --blue-500:#3b82f6; --blue-50:#eff6ff;
+  --red-500:#ef4444; --red-50:#fef2f2;
+  --green-600:#16a34a; --green-50:#f0fdf4;
+  --amber-600:#d97706; --amber-50:#fffbeb; --amber-200:#fde68a;
+  --toggle-on:#3b82f6; --toggle-off:#cbd5e1;
+  --radius:8px; --radius-sm:6px; --shadow-sm:0 1px 2px rgba(0,0,0,0.05);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text-1);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:960px;margin:0 auto;padding:28px 20px 60px}
+
+/* Header */
+.page-header{margin-bottom:24px}
+.page-header h1{font-size:18px;font-weight:700;letter-spacing:-0.3px;margin-bottom:4px}
+.page-header p{font-size:13px;color:var(--text-2)}
+
+/* Type Tabs */
+.type-tabs{display:flex;gap:0;margin-bottom:24px;border-bottom:2px solid var(--border)}
+.type-tab{padding:11px 22px;font-size:14px;font-weight:600;font-family:inherit;color:var(--text-3);background:none;border:none;cursor:pointer;position:relative;transition:color .15s}
+.type-tab:hover{color:var(--text-2)}
+.type-tab.active{color:var(--blue-600)}
+.type-tab.active::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:2px;background:var(--blue-600)}
+.type-tab .tb{display:inline-block;font-size:11px;font-weight:500;padding:1px 6px;border-radius:10px;margin-left:6px;vertical-align:middle}
+.type-tab.active .tb{background:var(--blue-50);color:var(--blue-600)}
+.type-tab:not(.active) .tb{background:var(--border-light);color:var(--text-3)}
+
+/* Menu Selector */
+.menu-sel{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.menu-btn{padding:7px 14px;font-size:12.5px;font-weight:600;font-family:inherit;color:var(--text-2);background:var(--surface);border:1px solid var(--border);border-radius:20px;cursor:pointer;transition:all .15s}
+.menu-btn:hover{border-color:var(--blue-500);color:var(--blue-600)}
+.menu-btn.active{background:var(--blue-600);color:#fff;border-color:var(--blue-600)}
+
+/* Note */
+.note{display:flex;align-items:flex-start;gap:8px;padding:10px 14px;margin-bottom:16px;background:var(--amber-50);border:1px solid var(--amber-200);border-radius:var(--radius-sm);font-size:12.5px;color:#92400e;line-height:1.55}
+.note svg{width:15px;height:15px;flex-shrink:0;margin-top:1px;color:var(--amber-600)}
+
+/* Card */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1px solid var(--border)}
+.card-title{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;letter-spacing:-0.3px}
+
+/* External icon + tooltip */
+.ic-ext{width:17px;height:17px;color:var(--text-3);cursor:pointer;transition:color .15s;flex-shrink:0}
+.ic-ext:hover{color:var(--blue-500)}
+.tip-w{position:relative;display:inline-flex}
+.tip-w:hover .tip{opacity:1;visibility:visible;transform:translateY(0)}
+.tip{position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%) translateY(3px);background:var(--text-1);color:#fff;font-size:11.5px;font-weight:400;padding:5px 10px;border-radius:5px;white-space:nowrap;opacity:0;visibility:hidden;transition:all .15s;z-index:10}
+.tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:var(--text-1)}
+
+/* Group Select */
+.grp-area{padding:18px 22px;border-bottom:1px solid var(--border-light)}
+.grp-label{font-size:13px;font-weight:600;color:var(--text-2);margin-bottom:9px}
+.grp-row{display:flex;align-items:center;gap:10px}
+.grp-select{flex:1;max-width:300px;padding:8px 34px 8px 13px;font-size:13.5px;font-family:inherit;color:var(--text-1);border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%2364748b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;cursor:pointer;transition:border-color .15s}
+.grp-select:focus{outline:none;border-color:var(--blue-500);box-shadow:0 0 0 3px rgba(59,130,246,.08)}
+
+/* Apply button & badge */
+.btn-apply{padding:8px 18px;font-size:13.5px;font-weight:600;font-family:inherit;color:#fff;background:var(--blue-600);border:none;border-radius:var(--radius-sm);cursor:pointer;transition:all .15s}
+.btn-apply:hover{background:#1d4ed8}
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;font-size:13px;font-weight:600;color:var(--green-600);background:var(--green-50);border:1px solid #bbf7d0;border-radius:var(--radius-sm);animation:badgeIn .25s ease}
+.status-badge svg{width:15px;height:15px;flex-shrink:0}
+@keyframes badgeIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+
+/* Inline Alert */
+.i-alert{display:flex;align-items:center;gap:6px;margin-top:9px;padding:7px 11px;border-radius:var(--radius-sm);font-size:12.5px;line-height:1.4;transition:all .25s}
+.i-alert svg{width:14px;height:14px;flex-shrink:0}
+.i-alert.warn{color:var(--red-500);background:var(--red-50)}
+.i-alert.info{color:var(--blue-600);background:var(--blue-50)}
+.i-alert.hide{display:none}
+
+/* List Area */
+.list-area{border-top:1px solid var(--border);animation:listIn .3s ease}
+.list-area-head{display:flex;align-items:center;gap:6px;padding:14px 22px 0;font-size:13.5px;font-weight:600;color:var(--text-1)}
+.list-area-desc{font-size:12.5px;font-weight:400;color:var(--text-2);margin-left:4px}
+.list-area-inner{padding:10px 22px 18px}
+@keyframes listIn{from{opacity:0}to{opacity:1}}
+
+/* Sub Tabs */
+.sub-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);padding-top:14px;margin-bottom:14px}
+.sub-tab{padding:7px 15px;font-size:13px;font-weight:600;color:var(--text-3);background:none;border:none;cursor:pointer;position:relative;transition:color .15s;font-family:inherit}
+.sub-tab.active{color:var(--blue-600)}
+.sub-tab.active::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:2px;background:var(--blue-600)}
+
+/* Table */
+.tbl-wrap{border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
+.dtbl{width:100%;border-collapse:collapse;font-size:13px}
+.dtbl thead th{padding:9px 14px;font-size:12px;font-weight:600;color:var(--text-2);background:var(--bg);text-align:left;border-bottom:1px solid var(--border)}
+.dtbl tbody td{padding:10px 14px;border-bottom:1px solid var(--border-light);vertical-align:middle}
+.dtbl tbody tr:last-child td{border-bottom:none}
+.dtbl tbody tr.dis td{opacity:.35}
+.dtbl tbody tr.dis .tgl-slider{cursor:default}
+
+/* Toggle */
+.tgl{position:relative;width:38px;height:21px;flex-shrink:0;display:inline-block}
+.tgl input{opacity:0;width:0;height:0;position:absolute}
+.tgl-slider{position:absolute;inset:0;background:var(--toggle-off);border-radius:11px;cursor:pointer;transition:background .2s}
+.tgl-slider::before{content:'';position:absolute;width:15px;height:15px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.tgl input:checked+.tgl-slider{background:var(--toggle-on)}
+.tgl input:checked+.tgl-slider::before{transform:translateX(17px)}
+
+/* Tag */
+.tag{display:inline-block;padding:2px 7px;font-size:11.5px;font-weight:500;border-radius:4px}
+.tag-b{background:var(--blue-50);color:var(--blue-600)}
+
+/* Search */
+.search-row{margin-bottom:12px}
+.search-input{padding:7px 12px 7px 30px;font-size:13px;font-family:inherit;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);width:210px;transition:border-color .15s;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:9px center}
+.search-input:focus{outline:none;border-color:var(--blue-500);box-shadow:0 0 0 3px rgba(59,130,246,.08)}
+
+/* OS icon */
+.os{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:4px;font-size:10px;font-weight:700}
+.os-w{background:#e0effe;color:#2563eb}
+.os-m{background:#f1f5f9;color:#475569}
+
+/* === Type B: Extension Tags === */
+.ext-section{margin-top:4px}
+.ext-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.ext-section-title{font-size:13px;font-weight:700;color:var(--text-1)}
+.ext-count{font-size:12px;color:var(--text-2);font-weight:500}
+.ext-grid{display:flex;flex-wrap:wrap;gap:8px;padding:16px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm)}
+.ext-chip{padding:6px 14px;font-size:12.5px;font-weight:500;color:var(--text-1);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);letter-spacing:-.1px}
+.ext-grid.dis .ext-chip{opacity:.35}
+.ext-policy{margin-top:12px;padding:14px 16px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm)}
+.ext-policy-title{font-size:12.5px;font-weight:700;color:var(--text-1);margin-bottom:4px}
+.ext-policy-desc{font-size:12.5px;color:var(--text-2)}
+.ext-policy.dis{opacity:.35}
+
+/* Fade & Toast */
+.fade-in{animation:fi .25s ease}
+@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.toast-container{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:100;pointer-events:none}
+.toast{padding:10px 20px;background:var(--text-1);color:#fff;font-size:13px;font-weight:500;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.18);opacity:0;transform:translateY(12px);transition:all .3s ease;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateY(0)}
+.dn{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="page-header">
+    <h1>정책 템플릿 — 관리 그룹 적용 UI 프로토타입</h1>
+    <p>유형 A와 유형 B를 탭으로 전환하며 실제 동작을 확인할 수 있습니다.</p>
+  </div>
+
+  <!-- Type Tabs -->
+  <div class="type-tabs">
+    <button class="type-tab active" onclick="switchType('a',this)">유형 A — 항목 ON/OFF 설정<span class="tb">민감정보 패턴 · 예외 · 점검</span></button>
+    <button class="type-tab" onclick="switchType('b',this)">유형 B — 설정 리스트 보기<span class="tb">파일첨부 확장자</span></button>
+  </div>
+
+  <!-- ========== TYPE A ========== -->
+  <div id="panelA" class="type-panel">
+    <div class="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>드롭다운에서 관리 그룹을 선택한 뒤 [적용]을 눌러보세요. 그룹을 변경하면 기존 항목이 비활성화되고, 다시 [적용]하면 새 그룹 항목으로 교체됩니다.</span></div>
+    <div class="menu-sel" id="menuSelA">
+      <button class="menu-btn active" data-menu="pattern">검사 패턴 설정</button>
+      <button class="menu-btn" data-menu="exception">검사 예외 설정</button>
+      <button class="menu-btn" data-menu="inspect">점검 항목 설정</button>
+    </div>
+    <div class="card fade-in" id="cardA">
+      <div class="card-head">
+        <div class="card-title"><span id="titleA">검사 패턴 설정</span>
+          <div class="tip-w"><svg class="ic-ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg><span class="tip" id="tipA"></span></div>
+        </div>
+      </div>
+      <div class="grp-area">
+        <div class="grp-label" id="grpLabelA">패턴 관리 그룹 설정</div>
+        <div class="grp-row">
+          <select class="grp-select" id="selA"></select>
+          <span id="applyAreaA"><button class="btn-apply">적용</button></span>
+        </div>
+        <div class="i-alert warn" id="alertA"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span id="alertTextA"></span></div>
+      </div>
+      <div id="listWrapA" class="dn"><div class="list-area"><div class="list-area-head"><span id="listTitleA"></span><span class="list-area-desc" id="listDescA"></span></div><div class="list-area-inner" id="listInnerA"></div></div></div>
+    </div>
+  </div>
+
+  <!-- ========== TYPE B ========== -->
+  <div id="panelB" class="type-panel dn">
+    <div class="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>파일첨부 제어 확장자 설정 기준입니다. 관리 그룹을 선택하고 [적용]을 누르면 제어 확장자 목록과 미제어 확장자 정책이 표시됩니다.</span></div>
+    <div class="card fade-in" id="cardB">
+      <div class="card-head">
+        <div class="card-title"><span>제어 확장자 설정</span>
+          <div class="tip-w"><svg class="ic-ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg><span class="tip">공통 정책센터 열기 — 파일첨부 확장자 관리 그룹 페이지 이동</span></div>
+        </div>
+      </div>
+      <div class="grp-area">
+        <div class="grp-label">파일첨부 제어 확장자 적용</div>
+        <div class="grp-row">
+          <select class="grp-select" id="selB"></select>
+          <span id="applyAreaB"><button class="btn-apply">적용</button></span>
+        </div>
+        <div class="i-alert warn" id="alertB"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span id="alertTextB"></span></div>
+      </div>
+      <div id="listWrapB" class="dn"><div class="list-area"><div class="list-area-head"><span>확장자 내역 보기</span><span class="list-area-desc">— 선택한 관리 그룹의 제어 대상 확장자 및 미제어 확장자 첨부 정책을 확인해주세요.</span></div><div class="list-area-inner" id="listInnerB"></div></div></div>
+    </div>
+  </div>
+</div>
+<div class="toast-container"><div class="toast" id="toast"></div></div>
+
+<script>
+const CHK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+// ===========================
+//  TYPE A DATA
+// ===========================
+const DA={
+  pattern:{title:'검사 패턴 설정',tip:'공통 정책센터 열기 — 민감정보 패턴 관리 그룹 페이지 이동',grpLabel:'패턴 관리 그룹 설정',listTitle:'적용 패턴 내역',listDesc:'— 선택한 관리 그룹의 패턴 설정을 확인해주세요.',subTabs:['기본 패턴','관리자 정의 패턴'],groups:{
+    default:{name:'★ 전사 패턴 그룹',cols:['검출 여부','패턴 유형','최소 검출 수','검출 옵션'],w:['80px','','100px',''],rows:[
+      {on:true,c:['주민등록번호','1개','<s class="tag tag-b">강도 2단계</s> <s class="tag tag-b">구분자 3단계</s>']},{on:false,c:['일반전화번호','1개','']},{on:true,c:['휴대전화번호','1개','<s class="tag tag-b">제외 패턴 3</s>']},{on:true,c:['외국인등록번호','1개','']},{on:true,c:['여권번호','1개','<s class="tag tag-b">제외 패턴 2</s>']},{on:true,c:['운전면허번호','1개','']},{on:true,c:['건강보험증번호','1개','']},{on:true,c:['계좌번호','1개','']},{on:true,c:['카드번호','1개','']},{on:true,c:['이메일','1개','']},{on:true,c:['사업자등록번호','1개','']},{on:true,c:['법인등록번호','1개','']}
+    ]},security:{name:'보안팀 전용 패턴',cols:['검출 여부','패턴 유형','최소 검출 수','검출 옵션'],w:['80px','','100px',''],rows:[
+      {on:true,c:['주민등록번호','3개','<s class="tag tag-b">강도 3단계</s>']},{on:true,c:['여권번호','2개','']},{on:true,c:['건강보험증번호','1개','<s class="tag tag-b">제외 패턴 1</s>']},{on:true,c:['사업자등록번호','1개','']},{on:true,c:['법인등록번호','1개','']},{on:true,c:['카드번호','2개','<s class="tag tag-b">강도 2단계</s>']}
+    ]},dev:{name:'개발팀 패턴',cols:['검출 여부','패턴 유형','최소 검출 수','검출 옵션'],w:['80px','','100px',''],rows:[
+      {on:true,c:['이메일','1개','']},{on:true,c:['계좌번호','1개','']},{on:true,c:['카드번호','1개','']}
+    ]}
+  }},
+  exception:{title:'검사 예외 설정',tip:'공통 정책센터 열기 — 예외 관리 그룹 페이지 이동',grpLabel:'예외 관리 그룹 설정',listTitle:'적용 예외 항목 내역',listDesc:'— 선택한 관리 그룹의 예외 설정을 확인해주세요.',subTabs:['예외 경로','예외 확장자'],search:true,searchPh:'경로명 검색',groups:{
+    default:{name:'★ 전사 예외 그룹',cols:['사용 여부','OS','경로명','파일/폴더'],w:['80px','60px','',''],rows:[
+      {on:true,c:['<s class="os os-w">W</s>','운영체제 시스템 파일','-']},{on:true,c:['<s class="os os-w">W</s>','숨긴 파일','-']},{on:true,c:['<s class="os os-w">W</s>','Windows','-']},{on:true,c:['<s class="os os-m">M</s>','System','-']},{on:true,c:['<s class="os os-m">M</s>','Applications','-']},{on:true,c:['<s class="os os-w">W</s>','다운로드 경로','C:\\Users\\Downloads']},{on:true,c:['<s class="os os-m">M</s>','Users','/Users']},{on:false,c:['<s class="os os-w">W</s>','현황테스트','C:\\Users']}
+    ]},strict:{name:'강화 예외 그룹',cols:['사용 여부','OS','경로명','파일/폴더'],w:['80px','60px','',''],rows:[
+      {on:true,c:['<s class="os os-w">W</s>','운영체제 시스템 파일','-']},{on:true,c:['<s class="os os-w">W</s>','Windows','-']},{on:true,c:['<s class="os os-m">M</s>','System','-']},{on:true,c:['<s class="os os-m">M</s>','Applications','-']}
+    ]},minimal:{name:'최소 예외 그룹',cols:['사용 여부','OS','경로명','파일/폴더'],w:['80px','60px','',''],rows:[
+      {on:true,c:['<s class="os os-w">W</s>','운영체제 시스템 파일','-']},{on:true,c:['<s class="os os-m">M</s>','System','-']}
+    ]}
+  }},
+  inspect:{title:'점검 항목 설정',tip:'공통 정책센터 열기 — 점검 항목 관리 그룹 페이지 이동',grpLabel:'점검 항목 관리 그룹 설정',listTitle:'적용 점검 항목 내역',listDesc:'— 선택한 관리 그룹의 점검 항목을 확인해주세요.',subTabs:null,groups:{
+    default:{name:'★ 전사 점검 그룹',cols:['점검 여부','점검 항목','배점','항목 옵션'],w:['80px','','80px',''],rows:[
+      {on:true,c:['운영체제 업데이트','10점','<s class="tag tag-b">최신 버전 기준</s>']},{on:true,c:['백신 설치 여부','15점','<s class="tag tag-b">지정 백신 필수</s>']},{on:false,c:['화면보호기 설정','5점','']},{on:true,c:['비밀번호 변경 주기','10점','<s class="tag tag-b">90일 기준</s>']},{on:true,c:['공유 폴더 점검','10점','']},{on:true,c:['USB 자동실행 차단','5점','']},{on:true,c:['방화벽 활성화','10점','']},{on:false,c:['원격 데스크톱 비활성화','5점','']}
+    ]},advanced:{name:'고급 점검 그룹',cols:['점검 여부','점검 항목','배점','항목 옵션'],w:['80px','','80px',''],rows:[
+      {on:true,c:['운영체제 업데이트','15점','<s class="tag tag-b">최신 버전 기준</s>']},{on:true,c:['백신 설치 여부','20점','<s class="tag tag-b">지정 백신 필수</s> <s class="tag tag-b">실시간 감시</s>']},{on:true,c:['비밀번호 변경 주기','15점','<s class="tag tag-b">60일 기준</s>']},{on:true,c:['공유 폴더 점검','10점','']},{on:true,c:['USB 자동실행 차단','10점','']},{on:true,c:['방화벽 활성화','15점','<s class="tag tag-b">인바운드 차단</s>']},{on:true,c:['원격 데스크톱 비활성화','10점','']},{on:true,c:['디스크 암호화','15점','<s class="tag tag-b">BitLocker</s>']}
+    ]},basic:{name:'기초 점검 그룹',cols:['점검 여부','점검 항목','배점','항목 옵션'],w:['80px','','80px',''],rows:[
+      {on:true,c:['운영체제 업데이트','20점','']},{on:true,c:['백신 설치 여부','30점','']},{on:true,c:['비밀번호 변경 주기','20점','<s class="tag tag-b">90일 기준</s>']},{on:true,c:['방화벽 활성화','30점','']}
+    ]}
+  }}
+};
+
+// ===========================
+//  TYPE B DATA
+// ===========================
+const DB={
+  groups:{
+    default:{
+      name:'★ 파일첨부 제어 확장자',
+      exts:['docx','pptx','hwpx','xlsx','ai','abcd','dwg','gz','doc','ppt','hwp','xls','pdf','jpg','png','gif','bmp','tiff','svg','eps','psd','indd','zip','rar','7z','tar','cab','iso','msg','eml','rtf','xml','mdb','htm','html'],
+      policy:'제어 확장자 리스트에 없는 모든 확장자',
+      policyDetail:'1KB 이하 파일 첨부 허용'
+    },
+    strict:{
+      name:'강화 제어 확장자',
+      exts:['docx','pptx','hwpx','xlsx','doc','ppt','hwp','xls','pdf','zip','rar','7z','tar','cab','iso','msg','eml','rtf','xml','mdb','htm','html','csv','json','yaml','sql','sh','bat','exe','dll','sys','ini','log','bak','tmp','dat'],
+      policy:'제어 확장자 리스트에 없는 모든 확장자',
+      policyDetail:'첨부 전면 차단'
+    },
+    minimal:{
+      name:'최소 제어 확장자',
+      exts:['docx','pptx','hwpx','xlsx','pdf','zip','rar'],
+      policy:'제어 확장자 리스트에 없는 모든 확장자',
+      policyDetail:'10KB 이하 파일 첨부 허용'
+    }
+  }
+};
+
+// ===========================
+//  STATE
+// ===========================
+let curType='a';
+let curMenuA='pattern';
+let appliedA=null, selectedA=null, statesA={};
+let appliedB=null, selectedB=null;
+
+// ===========================
+//  TYPE TAB SWITCH
+// ===========================
+function switchType(t,el){
+  document.querySelectorAll('.type-tab').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  curType=t;
+  document.getElementById('panelA').classList.toggle('dn',t!=='a');
+  document.getElementById('panelB').classList.toggle('dn',t!=='b');
+}
+
+// ===========================
+//  TYPE A LOGIC
+// ===========================
+function initA(){
+  document.querySelectorAll('#menuSelA .menu-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      curMenuA=btn.dataset.menu; appliedA=null; selectedA=null; statesA={};
+      document.querySelectorAll('#menuSelA .menu-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active'); renderA();
+    });
+  });
+  document.getElementById('selA').addEventListener('change',onSelChangeA);
+  document.getElementById('applyAreaA').addEventListener('click',e=>{if(e.target.closest('.btn-apply'))onApplyA()});
+  renderA();
+}
+
+function renderA(){
+  const d=DA[curMenuA],gk=Object.keys(d.groups);
+  document.getElementById('titleA').textContent=d.title;
+  document.getElementById('tipA').textContent=d.tip;
+  document.getElementById('grpLabelA').textContent=d.grpLabel;
+  document.getElementById('listTitleA').textContent=d.listTitle;
+  document.getElementById('listDescA').textContent=d.listDesc;
+  const sel=document.getElementById('selA'); sel.innerHTML='';
+  gk.forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=d.groups[k].name;sel.appendChild(o)});
+  selectedA=gk[0]; sel.value=selectedA;
+  document.getElementById('applyAreaA').innerHTML='<button class="btn-apply">적용</button>';
+  setAlertA('warn','관리 그룹을 선택 후 적용 버튼을 눌러주세요.');
+  document.getElementById('listWrapA').classList.add('dn');
+  const c=document.getElementById('cardA');c.classList.remove('fade-in');void c.offsetWidth;c.classList.add('fade-in');
+}
+
+function onSelChangeA(){
+  selectedA=document.getElementById('selA').value;
+  const area=document.getElementById('applyAreaA');
+  if(!appliedA){area.innerHTML='<button class="btn-apply">적용</button>';setAlertA('warn','관리 그룹을 선택 후 적용 버튼을 눌러주세요.')}
+  else if(selectedA===appliedA){area.innerHTML=`<span class="status-badge">${CHK} 적용됨</span>`;setAlertA('hide','');renderTableA(false)}
+  else{area.innerHTML='<button class="btn-apply">적용</button>';setAlertA('info','관리 그룹을 변경하였습니다. 적용 버튼을 눌러주세요.');renderTableA(true)}
+}
+
+function onApplyA(){
+  const d=DA[curMenuA],gk=selectedA,g=d.groups[gk];
+  if(!statesA[gk]){statesA[gk]={};g.rows.forEach((_,i)=>statesA[gk][i]=true)}
+  appliedA=gk;
+  document.getElementById('applyAreaA').innerHTML=`<span class="status-badge">${CHK} 적용됨</span>`;
+  setAlertA('hide','');
+  document.getElementById('listWrapA').classList.remove('dn');
+  renderTableA(false);
+  showToast(`"${g.name}" 관리 그룹을 적용하였습니다.`);
+}
+
+function renderTableA(dis){
+  const d=DA[curMenuA];document.getElementById('listWrapA').classList.remove('dn');
+  const inner=document.getElementById('listInnerA');let h='';
+  if(d.subTabs){h+='<div class="sub-tabs">';d.subTabs.forEach((t,i)=>h+=`<button class="sub-tab${i===0?' active':''}">${t}</button>`);h+='</div>'}
+  if(d.search)h+=`<div class="search-row"><input class="search-input" type="text" placeholder="${d.searchPh||'검색'}"></div>`;
+  const sk=dis?appliedA:selectedA;if(!sk)return;const g=d.groups[sk];
+  h+='<div class="tbl-wrap"><table class="dtbl"><thead><tr>';
+  g.cols.forEach((c,i)=>{const w=g.w[i]?` style="width:${g.w[i]}"`:'';h+=`<th${w}>${c}</th>`});
+  h+='</tr></thead><tbody>';
+  g.rows.forEach((r,ri)=>{
+    const dc=dis?' dis':'';h+=`<tr class="${dc}">`;
+    const ck=dis?(statesA[sk]?.[ri]??r.on):(statesA[selectedA]?.[ri]??true);
+    const da=dis?' disabled':'';
+    h+=`<td><label class="tgl"><input type="checkbox"${ck?' checked':''}${da} data-ri="${ri}" onchange="onTglA(this)"><span class="tgl-slider"></span></label></td>`;
+    r.c.forEach(c=>{h+=`<td>${c.replace(/<s /g,'<span ').replace(/<\/s>/g,'</span>')}</td>`});h+='</tr>'});
+  h+='</tbody></table></div>';inner.innerHTML=h;
+}
+
+function onTglA(el){if(!statesA[appliedA])statesA[appliedA]={};statesA[appliedA][parseInt(el.dataset.ri)]=el.checked}
+
+function setAlertA(type,text){
+  const el=document.getElementById('alertA'),t=document.getElementById('alertTextA');
+  el.className='i-alert';if(type==='hide')el.classList.add('hide');else{el.classList.add(type);t.textContent=text}
+}
+
+// ===========================
+//  TYPE B LOGIC
+// ===========================
+function initB(){
+  const gk=Object.keys(DB.groups),sel=document.getElementById('selB');
+  gk.forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=DB.groups[k].name;sel.appendChild(o)});
+  selectedB=gk[0]; sel.value=selectedB;
+  setAlertB('warn','관리 그룹을 선택 후 적용 버튼을 눌러주세요.');
+  sel.addEventListener('change',onSelChangeB);
+  document.getElementById('applyAreaB').addEventListener('click',e=>{if(e.target.closest('.btn-apply'))onApplyB()});
+}
+
+function onSelChangeB(){
+  selectedB=document.getElementById('selB').value;
+  const area=document.getElementById('applyAreaB');
+  if(!appliedB){area.innerHTML='<button class="btn-apply">적용</button>';setAlertB('warn','관리 그룹을 선택 후 적용 버튼을 눌러주세요.')}
+  else if(selectedB===appliedB){area.innerHTML=`<span class="status-badge">${CHK} 적용됨</span>`;setAlertB('hide','');renderListB(false)}
+  else{area.innerHTML='<button class="btn-apply">적용</button>';setAlertB('info','관리 그룹을 변경하였습니다. 적용 버튼을 눌러주세요.');renderListB(true)}
+}
+
+function onApplyB(){
+  const gk=selectedB,g=DB.groups[gk];appliedB=gk;
+  document.getElementById('applyAreaB').innerHTML=`<span class="status-badge">${CHK} 적용됨</span>`;
+  setAlertB('hide','');
+  document.getElementById('listWrapB').classList.remove('dn');
+  renderListB(false);
+  showToast(`"${g.name}" 관리 그룹을 적용하였습니다.`);
+}
+
+function renderListB(dis){
+  document.getElementById('listWrapB').classList.remove('dn');
+  const inner=document.getElementById('listInnerB');
+  const sk=dis?appliedB:selectedB;if(!sk)return;
+  const g=DB.groups[sk];
+  let h='';
+  // Search
+  h+=`<div class="search-row" style="display:flex;align-items:center;justify-content:space-between"><input class="search-input" type="text" placeholder="확장자 검색"><span class="ext-count">총 ${g.exts.length}개</span></div>`;
+  // Extension chips
+  h+=`<div class="ext-section"><div class="ext-section-head"><span class="ext-section-title">제어 확장자</span></div>`;
+  h+=`<div class="ext-grid${dis?' dis':''}">`;
+  g.exts.forEach(e=>h+=`<span class="ext-chip">${e}</span>`);
+  h+='</div></div>';
+  // Policy
+  h+=`<div class="ext-policy${dis?' dis':''}"><div class="ext-policy-title">${g.policy}</div><div class="ext-policy-desc">${g.policyDetail}</div></div>`;
+  inner.innerHTML=h;
+}
+
+function setAlertB(type,text){
+  const el=document.getElementById('alertB'),t=document.getElementById('alertTextB');
+  el.className='i-alert';if(type==='hide')el.classList.add('hide');else{el.classList.add(type);t.textContent=text}
+}
+
+// ===========================
+//  TOAST
+// ===========================
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
+
+// ===========================
+//  INIT
+// ===========================
+document.addEventListener('DOMContentLoaded',()=>{initA();initB()});
+</script>
+</body>
+</html>
