@@ -8,7 +8,7 @@
 
     --text-main: #f3f6fb;
     --text-sub: rgba(243, 246, 251, 0.72);
-    --text-muted: rgba(243, 246, 251, 0.48);
+    --text-muted: rgba(243, 246, 251, 0.65);
 
     --primary: #8ab4ff;
     --primary-strong: #5b8cff;
@@ -349,6 +349,10 @@ a {
     transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
 }
 
+.group-card {
+    cursor: pointer;
+}
+
 .group-card:hover {
     background:
         linear-gradient(180deg, rgba(24, 33, 52, 0.96), rgba(15, 22, 36, 0.98));
@@ -649,6 +653,19 @@ a {
     color: #ffd7d7;
     font-size: 15px;
     line-height: 1.7;
+}
+
+/* 키보드 포커스 스타일 */
+:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 3px;
+    border-radius: 4px;
+}
+
+.btn:focus-visible,
+.group-card:focus-visible {
+    outline-offset: 4px;
+    border-radius: 12px;
 }
 
 .footer {
