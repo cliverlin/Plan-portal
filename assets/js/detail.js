@@ -20,9 +20,9 @@ function loadProjectDetail() {
             return;
         }
 
-        document.title = `${project.groupTitle} | OfficeKeeper Plan Portal`;
+        document.title = `${project.groupTitle} | 기획 산출물 관리 포털`;
         document.querySelector('meta[name="description"]')?.setAttribute("content", project.description || project.groupTitle);
-        document.querySelector('meta[property="og:title"]')?.setAttribute("content", `${project.groupTitle} | OfficeKeeper Plan Portal`);
+        document.querySelector('meta[property="og:title"]')?.setAttribute("content", `${project.groupTitle} | 기획 산출물 관리 포털`);
         document.querySelector('meta[property="og:description"]')?.setAttribute("content", project.description || project.groupTitle);
         detailTitle.textContent = project.groupTitle;
         if (detailDate) detailDate.textContent = project.date || "";
@@ -65,9 +65,14 @@ function loadProjectDetail() {
               </div>` : ""}
             </div>
 
-            <div class="card-actions">
+            <div class="card-actions" style="align-items: center;">
               <a class="btn btn-primary" href="${encodeAttribute(item.prototypeUrl)}" target="_blank" rel="noopener noreferrer">프로토타입 보기</a>
               ${item.figmaUrl ? `<a class="btn btn-secondary" href="${encodeAttribute(item.figmaUrl)}" target="_blank" rel="noopener noreferrer">Figma 보기</a>` : ""}
+              ${item.updatedAt ? `
+              <div style="margin-left: auto; display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-muted); opacity: 0.6; white-space: nowrap;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 6a.75.75 0 00-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 000-1.5h-3.75V6z" clip-rule="evenodd"/></svg>
+                ${escapeHtml(item.updatedAt)}
+              </div>` : ""}
             </div>
           </article>
         `;
