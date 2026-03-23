@@ -6,7 +6,7 @@ const PROJECTS_DATA = [
         "description": "부서 관리자 권한, 관리 그룹, 항목 기반 관리, 백업 저장소 관련 화면 검토용 프로토타입입니다.",
         "items": [
             {
-                "title": "공통 정책센터 — 그룹 기반 메뉴 통합 (테스트)",
+                "title": "공통 정책센터 — 그룹 기반 메뉴 통합",
                 "description": "3개 화면(민감정보 패턴 관리 그룹 / 파일첨부 확장자 관리 그룹 / 예외 관리 그룹)을 공통 사이드바로 묶어 메뉴 전환으로 탐색하는 통합 프로토타입",
                 "prototypeUrl": "./prototypes/20260321/admin-group-menu.html",
                 "figmaUrl": "https://figma.com/design/1igehAViqcqYuJ5PI2nXLT/-기획-디자인-합본-OK5.0_Admin?node-id=38641-59411&t=ScE3ZSagdUgy69iR-4",
