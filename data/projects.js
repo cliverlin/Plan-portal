@@ -46,5 +46,45 @@ const PROJECTS_DATA = [
                 "updatedAt": "2026-03-21 10:00"
             }
         ]
+    },
+    {
+        "id": "2026-03-24",
+        "groupTitle": "그룹 배포 관련 프로토타입",
+        "date": "2026-03-24",
+        "description": "관리자 설정 및 승인 메뉴(회사 결재함, 결재자 설정) 관련 화면 검토용 프로토타입입니다.",
+        "items": [
+            {
+                "title": "관리자 설정",
+                "description": "전체·일반·부서관리자 유형별로 관리 범위와 서비스 권한을 설정하여 관리자를 등록하는 화면",
+                "prototypeUrl": "./prototypes/20260324/01_admin-register.html",
+                "figmaUrl": "https://figma.com/design/1igehAViqcqYuJ5PI2nXLT/-기획-디자인-합본-OK5.0_Admin?node-id=38641-59411&t=ScE3ZSagdUgy69iR-4",
+                "author": "이도연",
+                "updatedAt": "2026-03-24 15:04"
+            },
+            {
+                "title": "승인 메뉴 - 회사 결재함",
+                "description": "관리자가 회사 전체의 결재 요청 현황을 기간·유형·상태 필터로 조회하고 처리하는 화면",
+                "prototypeUrl": "./prototypes/20260324/02_company-approval-inbox.html",
+                "figmaUrl": "https://www.figma.com/design/1igehAViqcqYuJ5PI2nXLT/-%EA%B8%B0%ED%9A%8D-%EB%94%94%EC%9E%90%EC%9D%B8-%ED%95%A9%EB%B3%B8-OK5.0_Admin?node-id=38956-19314&t=BRPcKxIPjX4tvyTb-1",
+                "author": "이도연",
+                "updatedAt": "2026-03-24 15:04"
+            },
+            {
+                "title": "승인 메뉴 - 결재자 설정 > 목록 및 등록",
+                "description": "등록된 결재자 목록을 확인하고, 결재 범위(전체 또는 특정 부서)를 지정하여 새 결재자를 등록하는 화면",
+                "prototypeUrl": "./prototypes/20260324/03_approver-list-register.html",
+                "figmaUrl": "https://www.figma.com/design/1igehAViqcqYuJ5PI2nXLT/-%EA%B8%B0%ED%9A%8D-%EB%94%94%EC%9E%90%EC%9D%B8-%ED%95%A9%EB%B3%B8-OK5.0_Admin?node-id=38956-19608&t=BRPcKxIPjX4tvyTb-1",
+                "author": "이도연",
+                "updatedAt": "2026-03-24 15:04"
+            },
+            {
+                "title": "승인 메뉴 - 결재자 설정 > 부서별 결재자 현황",
+                "description": "부서 트리 기반으로 각 부서에 배정된 결재자를 한눈에 확인하고, 대표결재자를 지정·변경하는 화면",
+                "prototypeUrl": "./prototypes/20260324/04_approver-status-by-dept.html",
+                "figmaUrl": "https://www.figma.com/design/1igehAViqcqYuJ5PI2nXLT/-%EA%B8%B0%ED%9A%8D-%EB%94%94%EC%9E%90%EC%9D%B8-%ED%95%A9%EB%B3%B8-OK5.0_Admin?node-id=38956-21681&t=BRPcKxIPjX4tvyTb-1",
+                "author": "이도연",
+                "updatedAt": "2026-03-24 15:04"
+            }
+        ]
     }
 ];

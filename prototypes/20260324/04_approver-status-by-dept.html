@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>오피스키퍼 EP — 부서별 결재자 현황 프로토타입</title>
+<style>
+:root{--p:#2563eb;--pl:#dbeafe;--pd:#1d4ed8;--s:#16a34a;--sl:#dcfce7;--w:#f59e0b;--wl:#fef3c7;--d:#dc2626;--dl:#fee2e2;--g50:#f8fafc;--g100:#f1f5f9;--g200:#e2e8f0;--g300:#cbd5e1;--g400:#94a3b8;--g500:#64748b;--g600:#475569;--g700:#334155;--g800:#1e293b;--g900:#0f172a}
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Pretendard',-apple-system,sans-serif;background:var(--g50);color:var(--g800);font-size:14px;line-height:1.5}
+.pn{position:fixed;top:0;left:0;right:0;z-index:1000;background:var(--g900);display:flex;align-items:center;gap:3px;padding:0 12px;height:40px;overflow-x:auto}.pn-l{color:var(--g400);font-size:10px;font-weight:600;letter-spacing:.5px;margin-right:6px;white-space:nowrap}
+.pt{padding:5px 10px;border-radius:5px;font-size:11px;font-weight:500;color:var(--g400);cursor:pointer;border:none;background:none;white-space:nowrap}.pt:hover{color:#fff;background:rgba(255,255,255,.08)}.pt.on{color:#fff;background:var(--p)}
+.hd{height:52px;background:#fff;border-bottom:1px solid var(--g200);display:flex;align-items:center;padding:0 20px;gap:24px;position:sticky;top:40px;z-index:100}.logo{font-size:16px;font-weight:700;color:var(--p)}.gnb{display:flex;gap:2px}.gnb a{padding:6px 12px;font-size:13px;font-weight:500;color:var(--g500);text-decoration:none;border-radius:5px;cursor:default}.gnb a.on{color:var(--p);font-weight:600;position:relative}.gnb a.on::after{content:'';position:absolute;bottom:-11px;left:50%;transform:translateX(-50%);width:calc(100% - 12px);height:2px;background:var(--p);border-radius:1px}.hd-r{margin-left:auto;display:flex;align-items:center;gap:10px}.hd-btn{padding:5px 12px;border:1px solid var(--g300);border-radius:5px;font-size:12px;color:var(--g600);background:#fff;cursor:default}.rb{font-size:11px;background:var(--sl);padding:2px 8px;border-radius:10px;font-weight:500;color:var(--s)}
+.lay{display:flex;min-height:calc(100vh - 92px)}.sb{width:180px;background:#fff;border-right:1px solid var(--g200);padding:12px 0;position:sticky;top:92px;height:calc(100vh - 92px);overflow-y:auto}.sg{margin-bottom:6px}.sg-l{padding:6px 16px;font-size:11px;font-weight:600;color:var(--g400)}.si{padding:6px 16px 6px 28px;font-size:12px;color:var(--g600);cursor:default;display:block;text-decoration:none}.si:hover{background:var(--g50)}.si.on{color:var(--p);font-weight:600;background:var(--pl)}
+.ct{flex:1;padding:20px 24px;max-width:1280px;position:relative}.pg-t{font-size:18px;font-weight:700;color:var(--g900);margin-bottom:16px}
+.btn{padding:6px 14px;border-radius:5px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid transparent;font-family:inherit;display:inline-flex;align-items:center;gap:4px}.btn-p{background:var(--p);color:#fff;border-color:var(--p)}.btn-o{background:#fff;color:var(--g700);border-color:var(--g300)}.btn-sm{padding:3px 8px;font-size:11px}
+.badge{display:inline-flex;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;white-space:nowrap}.b-bl{background:var(--pl);color:var(--p)}.b-gy{background:var(--g100);color:var(--g500)}.b-gn{background:var(--sl);color:var(--s)}
+.tw{position:relative}.tw .tp{display:none;position:absolute;bottom:calc(100% + 6px);left:0;background:var(--g800);color:#fff;padding:8px 12px;border-radius:6px;font-size:10px;z-index:50;white-space:nowrap;line-height:1.6;box-shadow:0 4px 12px rgba(0,0,0,.15)}.tw:hover .tp{display:block}
+.ib{display:flex;align-items:flex-start;gap:8px;padding:10px 14px;background:var(--pl);border:1px solid #93c5fd;border-radius:6px;margin-bottom:12px;font-size:12px;color:var(--pd);line-height:1.4}.ib svg{flex-shrink:0;margin-top:1px}
+.tab-b{display:flex;gap:0;border-bottom:1px solid var(--g200);margin-bottom:16px}.tab-i{padding:8px 16px;font-size:13px;font-weight:500;color:var(--g500);cursor:pointer;border-bottom:2px solid transparent}.tab-i.on{color:var(--p);font-weight:600;border-bottom-color:var(--p)}
+.mhlp{width:14px;height:14px;background:var(--g200);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9px;color:var(--g500);cursor:help}
+.rep-tbl{width:100%;background:#fff;border:1px solid var(--g200);border-radius:6px;overflow:hidden}
+.rep-hd{display:flex;align-items:center;gap:5px;padding:10px 16px;background:var(--g50);border-bottom:1px solid var(--g200);font-size:12px;font-weight:600;color:var(--g600)}
+.rep-r{display:flex;align-items:center;padding:8px 16px;min-height:44px;border-bottom:1px solid var(--g100);cursor:pointer;transition:background .1s}.rep-r:last-child{border-bottom:none}.rep-r:hover{background:var(--pl)}
+.rep-r.out-scope{cursor:default;opacity:.55}.rep-r.out-scope:hover{background:transparent}.rep-r.out-scope .row-arrow{display:none}
+.rep-d{flex:0 0 220px;display:flex;align-items:center;gap:4px;font-size:12px;color:var(--g800)}.rep-dn{font-weight:500}
+.rep-a{flex:1;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.rep-ch{width:16px;height:16px;display:flex;align-items:center;justify-content:center;color:var(--g400);font-size:10px;flex-shrink:0}.rep-ch.em{cursor:default}
+.in0 .rep-d{padding-left:0}.in1 .rep-d{padding-left:20px}.in2 .rep-d{padding-left:40px}
+.rep-cp{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:var(--g50);border:1px solid var(--g200);border-radius:5px;font-size:11px;color:var(--g800)}
+.rep-ci{width:18px;height:18px;background:var(--pl);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--p);flex-shrink:0}
+.crown{font-size:12px;flex-shrink:0;line-height:1}.crown.filled{color:var(--w)}.crown.empty{color:var(--g300);font-size:11px}
+.more-chip{display:inline-flex;align-items:center;justify-content:center;padding:3px 8px;background:var(--g100);border:1px solid var(--g200);border-radius:5px;font-size:11px;font-weight:600;color:var(--g500);cursor:pointer}
+.scope-tag{font-size:9px;padding:1px 4px;border-radius:2px;font-weight:600;margin-left:2px}.scope-tag.all{background:var(--pl);color:var(--p)}.scope-tag.dept{background:var(--sl);color:var(--s)}
+.inherit-note{font-size:10px;color:var(--g400);font-style:italic}
+.row-arrow{margin-left:auto;color:var(--g300);font-size:14px;flex-shrink:0}
+/* 읽기 전용 뱃지 */
+.readonly-badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;color:var(--g400);margin-left:4px;white-space:nowrap}
+.panel-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.25);z-index:200}.panel-overlay.on{display:block}
+.slide-panel{position:fixed;top:0;right:-420px;width:420px;height:100vh;background:#fff;box-shadow:-8px 0 32px rgba(0,0,0,.12);z-index:201;transition:right .3s ease;display:flex;flex-direction:column}
+.slide-panel.on{right:0}
+.panel-h{padding:16px 20px;border-bottom:1px solid var(--g200);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.panel-t{font-size:15px;font-weight:700}
+.panel-x{width:28px;height:28px;border:none;background:none;cursor:pointer;color:var(--g400);font-size:18px;display:flex;align-items:center;justify-content:center;border-radius:5px}.panel-x:hover{background:var(--g100)}
+.panel-b{padding:16px 20px;overflow-y:auto;flex:1}
+.panel-desc{font-size:12px;color:var(--g500);margin-bottom:14px}
+.panel-list{display:flex;flex-direction:column;gap:6px}
+.panel-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--g200);border-radius:6px;background:#fff;transition:background .1s}
+.panel-item:hover{background:var(--g50)}
+.panel-item .crown{cursor:pointer;font-size:16px}
+.panel-name{font-size:12px;font-weight:500;color:var(--g800);flex:1}
+.panel-dept{font-size:10px;color:var(--g400)}
+.panel-hint{margin-top:16px;padding:10px 12px;background:var(--g50);border-radius:6px;font-size:11px;color:var(--g500);line-height:1.6}
+.page{display:none}.page.on{display:block}
+.cdemo{margin-top:24px;padding:16px;border:2px dashed var(--g300);border-radius:10px;background:var(--g50)}.cdemo-l{font-size:10px;font-weight:600;color:var(--g400);margin-bottom:10px;letter-spacing:.5px}
+</style>
+</head>
+<body>
+<nav class="pn"><span class="pn-l">▸</span>
+<button class="pt on" onclick="go('dept1')">전체/일반 관리자</button>
+<button class="pt" onclick="go('dept2')">부서관리자</button>
+</nav>
+<div style="padding-top:40px">
+
+<!-- ===== 전체/일반 관리자 ===== -->
+<div id="p-dept1" class="page on">
+<header class="hd"><div class="logo">✓ OfficeKeeper</div><nav class="gnb"><a>홈</a><a>서비스▾</a><a class="on">승인</a><a>관리</a><a>보고서</a><a>조직도</a></nav><div class="hd-r"><button class="hd-btn">나의 결재함</button></div></header>
+<div class="lay"><aside class="sb"><div class="sg"><div class="sg-l">📋 승인</div><a class="si">회사 결재함</a><a class="si on">결재자 설정</a><a class="si">결재 옵션 설정</a></div></aside>
+<main class="ct"><h1 class="pg-t">결재자 설정</h1>
+<div class="tab-b"><div class="tab-i" style="cursor:pointer">결재자 목록</div><div class="tab-i on">부서별 결재자 현황</div></div>
+<div class="rep-tbl">
+<div class="rep-hd">부서별 결재자 현황 <span class="tw"><span class="mhlp">?</span><span class="tp">각 부서에 등록된 결재자를 확인할 수 있습니다.<br>부서 행을 클릭하면 우측 패널에서<br>대표결재자를 지정할 수 있습니다.<br><br>👑 = 대표결재자</span></span></div>
+
+<!-- 개발본부: 김부서(대표), SCKT1 → 2명 전부 표시 -->
+<div class="rep-r in0" onclick="openPanel('개발본부')"><div class="rep-d"><span class="rep-ch">▾</span><span class="rep-dn">개발본부</span></div><div class="rep-a">
+<div class="rep-cp"><span class="crown filled">👑</span><span class="rep-ci">👤</span>김부서</div>
+<div class="rep-cp"><span class="rep-ci">👤</span>SCKT1</div>
+</div><span class="row-arrow">›</span></div>
+
+<!-- 개발1팀: 박개발(대표), 김부서, SCKT1, 정개발2 → 4명 전부 표시 (5개 이하) -->
+<div class="rep-r in1" onclick="openPanel('개발1팀')"><div class="rep-d"><span class="rep-ch">▾</span><span class="rep-dn">개발1팀</span></div><div class="rep-a">
+<div class="rep-cp"><span class="crown filled">👑</span><span class="rep-ci">👤</span>박개발</div>
+<div class="rep-cp"><span class="rep-ci">👤</span>김부서</div>
+<div class="rep-cp"><span class="rep-ci">👤</span>SCKT1</div>
+<div class="rep-cp"><span class="rep-ci">👤</span>정개발2</div>
+</div><span class="row-arrow">›</span></div>
+
+<!-- 프론트엔드 파트: SCKT1, 정개발2 → 2명 -->
+<div class="rep-r in2" onclick="openPanel('프론트엔드 파트')"><div class="rep-d"><span class="rep-ch em"> </span><span class="rep-dn">프론트엔드 파트</span></div><div class="rep-a">
+<div class="rep-cp"><span class="rep-ci">👤</span>SCKT1</div>
+<div class="rep-cp"><span class="rep-ci">👤</span>정개발2</div>
+</div><span class="row-arrow">›</span></div>
+
+<!-- 백엔드 파트: SCKT1, 정개발2 → 2명 -->
+<div class="rep-r in2" onclick="openPanel('백엔드 파트')"><div class="rep-d"><span class="rep-ch em"> </span><span class="rep-dn">백엔드 파트</span></div><div class="rep-a">
+<div class="rep-cp"><span class="rep-ci">👤</span>SCKT1</div>
+<div class="rep-cp"><span class="rep-ci">👤</span>정개발2</div>
+</div><span class="row-arrow">›</span></div>
+
+<!-- 개발2팀: 정개발2(대표), 김부서, SCKT1 → 3명 전부 표시 -->
+<div class="rep-r in1" onclick="openPanel('개발2팀')"><div class="rep-d"><span class="rep-ch">▸</span><span class="rep-dn">개발2팀</span></div><div class="rep-a">
+<div class="rep-cp"><span class="crown filled">👑</span><span class="rep-ci">👤</span>정개발2</div>
+<div class="rep-cp"><span class="rep-ci">👤</span>김부서</div>
+<div class="rep-cp"><span class="rep-ci">👤</span>SCKT1</div>
+</div><span class="row-arrow">›</span></div>
+
+<!-- 영업본부: SCKT1, 정개발2 → 2명 -->
+<div class="rep-r in0" onclick="openPanel('영업본부')"><div class="rep-d"><span class="rep-ch">▾</span><span class="rep-dn">영업본부</span></div><div class="rep-a">
+<div class="rep-cp"><span class="rep-ci">👤</span>SCKT1</div>
+<div class="rep-cp"><span class="rep-ci">👤</span>정개발2</div>
+</div><span class="row-arrow">›</span></div>
+
+<!-- 영업1팀: 이매니저(대표), SCKT1, 정개발2 → 3명 전부 표시 -->
+<div class="rep-r in1" onclick="openPanel('영업1팀')"><div class="rep-d"><span class="rep-ch em"> </span><span class="rep-dn">영업1팀</span></div><div class="rep-a">
+<div class="rep-cp"><span class="crown filled">👑</span><span class="rep-ci">👤</span>이매니저</div>
+<div class="rep-cp"><span class="rep-ci">👤</span>SCKT1</div>
+<div class="rep-cp"><span class="rep-ci">👤</span>정개발2</div>
+</div><span class="row-arrow">›</span></div>
+
+<!-- 영업2팀: 이매니저, SCKT1, 정개발2 → 3명 전부 표시 -->
+<div class="rep-r in1" onclick="openPanel('영업2팀')"><div class="rep-d"><span class="rep-ch em"> </span><span class="rep-dn">영업2팀</span></div><div class="rep-a">
+<div class="rep-cp"><span class="rep-ci">👤</span>이매니저</div>
+<div class="rep-cp"><span class="rep-ci">👤</span>SCKT1</div>
+<div class="rep-cp"><span class="rep-ci">👤</span>정개발2</div>
+</div><span class="row-arrow">›</span></div>
+</div>
+
+<div class="cdemo"><div class="cdemo-l">📌 목록 칩 표시 규칙</div>
+<div style="display:flex;flex-direction:column;gap:6px;font-size:11px;color:var(--g600)">
+<div style="display:flex;align-items:center;gap:6px"><div class="rep-cp"><span class="crown filled">👑</span><span class="rep-ci">👤</span>이름</div> 대표결재자</div>
+<div style="display:flex;align-items:center;gap:6px"><div class="rep-cp"><span class="rep-ci">👤</span>이름</div> 일반 결재자</div>
+<div>칩 최대 5개, 6개 이상은 <span class="more-chip" style="font-size:10px;padding:1px 5px">+N</span> 호버 시 전체 표시</div>
+<div>행 클릭 → 우측 슬라이드 패널에서 전체 결재자 확인 및 대표결재자 지정</div>
+</div></div>
+</main></div></div>
+
+<!-- ===== 부서관리자 ===== -->
+<div id="p-dept2" class="page">
+<header class="hd"><div class="logo">✓ OfficeKeeper</div><nav class="gnb"><a>홈</a><a>서비스▾</a><a class="on">승인</a><a>관리</a><a>보고서</a><a>조직도</a></nav><div class="hd-r"><span class="rb">부서관리자: 김부서</span><button class="hd-btn">나의 결재함</button></div></header>
+<div class="lay"><aside class="sb"><div class="sg"><div class="sg-l">📋 승인</div><a class="si">회사 결재함</a><a class="si on">결재자 설정</a></div></aside>
+<main class="ct"><h1 class="pg-t">결재자 설정</h1>
+<div class="tab-b"><div class="tab-i" style="cursor:pointer">결재자 목록</div><div class="tab-i on">부서별 결재자 현황</div></div>
+<div class="ib"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><div>모든 부서의 결재자 현황이 표시됩니다. 관리 범위 내 부서만 행을 클릭하여 대표결재자를 지정할 수 있습니다.</div></div>
+<div class="rep-tbl">
+<div class="rep-hd">부서별 결재자 현황</div>
+
+<!-- 개발본부: 관리 범위 ✓ -->
+<div class="rep-r in0" onclick="openPanel('개발본부')"><div class="rep-d"><span class="rep-ch">▾</span><span class="rep-dn">개발본부</span></div><div class="rep-a">
+<div class="rep-cp"><span class="crown filled">👑</span><span class="rep-ci">👤</span>김부서</div>
+<div class="rep-cp"><span class="rep-ci">👤</span>SCKT1</div>
+</div><span class="row-arrow">›</span></div>
+
+<!-- 개발1팀: 관리 범위 ✓ → 4명 전부 표시 -->
+<div class="rep-r in1" onclick="openPanel('개발1팀')"><div class="rep-d"><span class="rep-ch">▾</span><span class="rep-dn">개발1팀</span></div><div class="rep-a">
+<div class="rep-cp"><span class="crown filled">👑</span><span class="rep-ci">👤</span>박개발</div>
+<div class="rep-cp"><span class="rep-ci">👤</span>김부서</div>
+<div class="rep-cp"><span class="rep-ci">👤</span>SCKT1</div>
+<div class="rep-cp"><span class="rep-ci">👤</span>정개발2</div>
+</div><span class="row-arrow">›</span></div>
+
+<!-- 프론트엔드 파트: 관리 범위 밖 → 🔒 읽기 전용 -->
+<div class="rep-r in2 out-scope"><div class="rep-d"><span class="rep-ch em"> </span><span class="rep-dn">프론트엔드 파트</span><span class="readonly-badge">🔒 읽기 전용</span></div><div class="rep-a">
+<span class="inherit-note">상위 부서(개발1팀) 결재자 적용</span>
+</div><span class="row-arrow">›</span></div>
+
+<!-- 백엔드 파트: 관리 범위 밖 → 🔒 읽기 전용 -->
+<div class="rep-r in2 out-scope"><div class="rep-d"><span class="rep-ch em"> </span><span class="rep-dn">백엔드 파트</span><span class="readonly-badge">🔒 읽기 전용</span></div><div class="rep-a">
+<span class="inherit-note">상위 부서(개발1팀) 결재자 적용</span>
+</div><span class="row-arrow">›</span></div>
+
+<!-- 개발2팀: 관리 범위 ✓ → 3명 전부 표시 -->
+<div class="rep-r in1" onclick="openPanel('개발2팀')"><div class="rep-d"><span class="rep-ch">▸</span><span class="rep-dn">개발2팀</span></div><div class="rep-a">
+<div class="rep-cp"><span class="crown filled">👑</span><span class="rep-ci">👤</span>정개발2</div>
+<div class="rep-cp"><span class="rep-ci">👤</span>김부서</div>
+<div class="rep-cp"><span class="rep-ci">👤</span>SCKT1</div>
+</div><span class="row-arrow">›</span></div>
+
+<!-- 영업본부: 관리 범위 밖 → 🔒 읽기 전용 -->
+<div class="rep-r in0 out-scope"><div class="rep-d"><span class="rep-ch">▾</span><span class="rep-dn">영업본부</span><span class="readonly-badge">🔒 읽기 전용</span></div><div class="rep-a">
+<div class="rep-cp"><span class="rep-ci">👤</span>SCKT1</div>
+<div class="rep-cp"><span class="rep-ci">👤</span>정개발2</div>
+</div><span class="row-arrow">›</span></div>
+
+<!-- 영업1팀: 관리 범위 밖 → 🔒 읽기 전용 -->
+<div class="rep-r in1 out-scope"><div class="rep-d"><span class="rep-ch em"> </span><span class="rep-dn">영업1팀</span><span class="readonly-badge">🔒 읽기 전용</span></div><div class="rep-a">
+<div class="rep-cp"><span class="crown filled">👑</span><span class="rep-ci">👤</span>이매니저</div>
+<div class="rep-cp"><span class="rep-ci">👤</span>SCKT1</div>
+<div class="rep-cp"><span class="rep-ci">👤</span>정개발2</div>
+</div><span class="row-arrow">›</span></div>
+
+<!-- 영업2팀: 관리 범위 밖 → 🔒 읽기 전용 -->
+<div class="rep-r in1 out-scope"><div class="rep-d"><span class="rep-ch em"> </span><span class="rep-dn">영업2팀</span><span class="readonly-badge">🔒 읽기 전용</span></div><div class="rep-a">
+<div class="rep-cp"><span class="rep-ci">👤</span>이매니저</div>
+<div class="rep-cp"><span class="rep-ci">👤</span>SCKT1</div>
+<div class="rep-cp"><span class="rep-ci">👤</span>정개발2</div>
+</div><span class="row-arrow">›</span></div>
+</div>
+</main></div></div>
+
+</div>
+
+<!-- ===== 슬라이드 패널 ===== -->
+<div class="panel-overlay" id="panelOverlay" onclick="closePanel()"></div>
+<div class="slide-panel" id="slidePanel">
+<div class="panel-h"><h2 class="panel-t" id="panelTitle">개발1팀</h2><button class="panel-x" onclick="closePanel()">×</button></div>
+<div class="panel-b">
+<div class="panel-desc">해당 부서에 등록된 결재자 목록입니다. 왕관을 클릭하여 대표결재자를 지정할 수 있습니다.</div>
+<div style="margin-bottom:10px;font-size:11px;font-weight:600;color:var(--g500)">등록 결재자 (4명)</div>
+<div class="panel-list">
+<div class="panel-item" style="border-color:var(--w);background:var(--wl)">
+<span class="crown filled" style="font-size:16px;cursor:pointer" title="대표결재자 — 클릭하여 해제">👑</span>
+<span class="rep-ci" style="width:24px;height:24px;font-size:11px">👤</span>
+<div><div class="panel-name">박개발</div><div class="panel-dept">개발1팀</div></div>
+<span class="badge b-gn" style="margin-left:auto">부서</span>
+</div>
+<div class="panel-item">
+<span class="crown empty" style="font-size:16px;cursor:pointer" title="클릭하여 대표결재자 지정">♛</span>
+<span class="rep-ci" style="width:24px;height:24px;font-size:11px">👤</span>
+<div><div class="panel-name">김부서</div><div class="panel-dept">개발본부</div></div>
+<span class="badge b-gn" style="margin-left:auto">부서</span>
+</div>
+<div class="panel-item">
+<span class="crown empty" style="font-size:16px;cursor:pointer" title="클릭하여 대표결재자 지정">♛</span>
+<span class="rep-ci" style="width:24px;height:24px;font-size:11px">👤</span>
+<div><div class="panel-name">SCKT1</div><div class="panel-dept">경영지원본부</div></div>
+<span class="badge b-bl" style="margin-left:auto">전체</span>
+</div>
+<div class="panel-item">
+<span class="crown empty" style="font-size:16px;cursor:pointer" title="클릭하여 대표결재자 지정">♛</span>
+<span class="rep-ci" style="width:24px;height:24px;font-size:11px">👤</span>
+<div><div class="panel-name">정개발2</div><div class="panel-dept">개발2팀</div></div>
+<span class="badge b-bl" style="margin-left:auto">전체</span>
+</div>
+</div>
+<div class="panel-hint">
+💡 왕관 클릭으로 대표결재자를 지정합니다. 부서당 1명만 지정할 수 있습니다.<br>
+<span class="badge b-bl" style="font-size:9px">전체</span> 전체 결재 범위 &nbsp;
+<span class="badge b-gn" style="font-size:9px">부서</span> 특정 부서 결재 범위
+</div>
+</div>
+</div>
+
+<script>
+const m={dept1:'p-dept1',dept2:'p-dept2'};
+const k=Object.keys(m);
+function go(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.pt').forEach(t=>t.classList.remove('on'));const e=document.getElementById(m[id]);if(e)e.classList.add('on');const i=k.indexOf(id);const ts=document.querySelectorAll('.pt');if(ts[i])ts[i].classList.add('on');closePanel()}
+function openPanel(deptName){document.getElementById('panelTitle').textContent=deptName;document.getElementById('panelOverlay').classList.add('on');document.getElementById('slidePanel').classList.add('on')}
+function closePanel(){document.getElementById('panelOverlay').classList.remove('on');document.getElementById('slidePanel').classList.remove('on')}
+</script>
+</body>
+</html>
