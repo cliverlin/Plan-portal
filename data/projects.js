@@ -86,5 +86,46 @@ const PROJECTS_DATA = [
                 "updatedAt": "2026-03-24 15:04"
             }
         ]
+    },
+    {
+        "id": "2026-03-30",
+        "groupTitle": "부서 관리권한 및 공통 정책센터 변경 공유 프로토타입",
+        "date": "2026-03-30",
+        "description": "부서 관리권한, 공통 정책센터 주요 진행사항을 공유하기 위한 프로토타입입니다. [대표님 공유]",
+        "hideFigma": true,
+        "items": [
+            {
+                "title": "부서관리자 등록",
+                "description": "전체·일반·부서 관리자 유형을 라디오 버튼으로 전환하며 관리 범위, 서비스 권한 등 각 유형별 권한 설정 영역 차이를 확인할 수 있는 팝업 프로토타입",
+                "prototypeUrl": "./prototypes/20260330/sungjin1_admin-registration_prototype_v1.2_260327.html",
+                "figmaUrl": "",
+                "author": "임성진",
+                "updatedAt": "2026-03-30 00:00"
+            },
+            {
+                "title": "부서관리자 권한 주요 화면",
+                "description": "전체관리자 vs 부서범위 관리자의 그룹 정책 템플릿 목록 차이, 읽기전용 정책 설정 화면, 조직도 메뉴 관리 범위 제한을 4개 탭으로 확인할 수 있는 프로토타입",
+                "prototypeUrl": "./prototypes/20260330/sungjin2_department-admin_permission_prototype_v1.2_260330.html",
+                "figmaUrl": "",
+                "author": "임성진",
+                "updatedAt": "2026-03-30 00:00"
+            },
+            {
+                "title": "공통 정책센터 관리 그룹화 메뉴",
+                "description": "민감정보 패턴 관리 그룹, 파일첨부 확장자 관리 그룹, 예외 관리 그룹 3종의 공통 정책센터 화면을 통합하여 전체관리자·부서관리자 역할 전환으로 동작 차이를 확인할 수 있는 프로토타입",
+                "prototypeUrl": "./prototypes/20260330/yeeun1_admin-group-menu.html",
+                "figmaUrl": "",
+                "author": "박예은",
+                "updatedAt": "2026-03-30 00:00"
+            },
+            {
+                "title": "정책 템플릿 - 관리 그룹 적용 유형 비교",
+                "description": "정책 템플릿에서 관리 그룹을 적용하는 두 가지 UI 유형(유형 A: 항목 ON/OFF, 유형 B: 설정 리스트 보기)을 탭으로 전환하며 실제 동작을 비교할 수 있는 프로토타입",
+                "prototypeUrl": "./prototypes/20260330/yeeun2_template-group-policy-064.html",
+                "figmaUrl": "",
+                "author": "박예은",
+                "updatedAt": "2026-03-30 00:00"
+            }
+        ]
     }
 ];

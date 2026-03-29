@@ -1,0 +1,1717 @@
+<!DOCTYPE html>
+<html lang="ko-KR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>공통 정책센터 — 그룹 기반 메뉴 통합 프로토타입</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Noto Sans KR', sans-serif; background: #f5f5f8; overflow: hidden; height: 100vh; }
+  .shell { display: flex; height: 100vh; }
+  
+  /* 통합 사이드바 */
+  .nav-sidebar { width: 240px; background: #1e2532; color: #b8c0cc; flex-shrink: 0; overflow-y: auto; padding: 16px 0; }
+  .nav-title { font-size: 13px; font-weight: 600; color: #fff; padding: 0 16px; margin-bottom: 16px; }
+  .nav-section { padding: 6px 0; }
+  .nav-section-label { font-size: 11px; font-weight: 600; color: #667; padding: 4px 16px; letter-spacing: 0.05em; }
+  .nav-item { padding: 8px 16px 8px 24px; font-size: 12.5px; cursor: pointer; transition: all 0.15s; border-left: 3px solid transparent; }
+  .nav-item:hover { background: rgba(255,255,255,0.06); }
+  .nav-item.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 500; border-left-color: #4a7cff; }
+  .nav-item.disabled { color: #556; cursor: default; }
+  .nav-item.disabled:hover { background: none; }
+  .nav-badge { font-size: 9px; background: #4a7cff; color: #fff; padding: 1px 5px; border-radius: 3px; margin-left: 6px; font-weight: 600; }
+  
+  /* 메인 영역 */
+  .main { flex: 1; position: relative; }
+  .frame { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; display: none; }
+  .frame.active { display: block; }
+  
+  .proto-badge { position: fixed; top: 8px; right: 12px; background: #ff6b35; color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; z-index: 9999; letter-spacing: 0.05em; }
+</style>
+</head>
+<body>
+<div class="proto-badge">통합 프로토타입</div>
+
+<div class="shell">
+  <div class="nav-sidebar">
+    <div class="nav-title">공통 정책센터 — 그룹 기반 메뉴</div>
+    
+    <div class="nav-section">
+      <div class="nav-section-label">그룹 기반 관리 (구현됨)</div>
+      <div class="nav-item active" onclick="switchMenu('sensitive', this)">
+        민감정보 패턴 관리 그룹 <span class="nav-badge">그룹</span>
+      </div>
+      <div class="nav-item" onclick="switchMenu('extension', this)">
+        파일첨부 확장자 관리 그룹 <span class="nav-badge">그룹</span>
+      </div>
+      <div class="nav-item" onclick="switchMenu('exception', this)">
+        예외 관리 그룹 <span class="nav-badge">그룹</span>
+      </div>
+    </div>
+    
+    <div class="nav-section">
+      <div class="nav-section-label">그룹 기반 관리 (미구현)</div>
+      <div class="nav-item disabled">점검 항목 관리 그룹</div>
+      <div class="nav-item disabled">소프트웨어 자산 관리 그룹</div>
+    </div>
+    
+    <div class="nav-section" style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);">
+      <div class="nav-section-label" style="font-size:10px;color:#556;">각 화면에는 자체 사이드바와<br>역할 전환 스위치가 포함되어 있습니다.</div>
+    </div>
+  </div>
+  
+  <div class="main">
+    <iframe class="frame active" id="frame-sensitive" srcdoc="<!DOCTYPE html>
+<html lang=&quot;ko-KR&quot;>
+<head>
+<meta charset=&quot;UTF-8&quot;>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;>
+<title>민감정보 패턴 관리 그룹 — UI 프로토타입 v1.2</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&amp;display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Noto Sans KR', -apple-system, sans-serif; color: #222; background: #f5f5f8; font-size: 13px; -webkit-font-smoothing: antialiased; }
+
+  .app-shell { display: flex; height: 100vh; overflow: hidden; }
+  .sidebar { width: 220px; background: #1e2532; color: #b8c0cc; flex-shrink: 0; overflow-y: auto; padding: 16px 0; }
+  .sidebar-title { font-size: 13px; font-weight: 600; color: #fff; padding: 0 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .sidebar-title .close-btn { margin-left: auto; cursor: pointer; color: #667; font-size: 16px; }
+  .sidebar-section { padding: 6px 0; }
+  .sidebar-section-label { font-size: 11px; font-weight: 600; color: #667; padding: 4px 16px; letter-spacing: 0.05em; }
+  .sidebar-item { padding: 7px 16px 7px 24px; font-size: 12.5px; cursor: pointer; transition: background 0.15s; }
+  .sidebar-item:hover { background: rgba(255,255,255,0.06); }
+  .sidebar-item.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 500; }
+  .main-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .topbar { height: 48px; background: #fff; border-bottom: 1px solid #e2e2e8; display: flex; align-items: center; padding: 0 24px; font-size: 13px; color: #888; flex-shrink: 0; }
+  .topbar .breadcrumb { display: flex; align-items: center; gap: 6px; }
+  .topbar .breadcrumb span { color: #bbb; }
+  .topbar .breadcrumb .current { color: #222; font-weight: 500; }
+  .content-area { flex: 1; overflow-y: auto; padding: 24px 32px 60px; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .page-title { font-size: 18px; font-weight: 700; color: #111; margin-bottom: 8px; }
+  .page-info { background: #eef3ff; border: 1px solid #d0dbf0; border-radius: 6px; padding: 10px 14px; font-size: 12.5px; color: #3366aa; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+  .page-info a { color: #2255aa; text-decoration: underline; cursor: pointer; font-weight: 500; }
+  .toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .search-input { padding: 7px 12px; border: 1px solid #d0d0d8; border-radius: 5px; font-size: 12.5px; width: 220px; outline: none; font-family: inherit; }
+  .search-input:focus { border-color: #4a7cff; box-shadow: 0 0 0 2px rgba(74,124,255,0.12); }
+  .toolbar .count { font-size: 12.5px; color: #888; margin-left: auto; }
+
+  .btn { padding: 7px 16px; border-radius: 5px; font-size: 12.5px; font-weight: 500; cursor: pointer; border: 1px solid transparent; font-family: inherit; transition: all 0.15s; }
+  .btn-primary { background: #4a7cff; color: #fff; }
+  .btn-primary:hover { background: #3a6aee; }
+  .btn-primary:disabled { background: #b0c4ff; cursor: not-allowed; }
+  .btn-secondary { background: #fff; color: #444; border-color: #d0d0d8; }
+  .btn-secondary:hover { background: #f8f8fa; }
+  .btn-danger-fill { background: #e04040; color: #fff; }
+  .btn-danger-fill:hover { background: #cc3333; }
+  .btn-sm { padding: 4px 10px; font-size: 11.5px; }
+
+  /* ─── List Card ─── */
+  .card-list { display: flex; flex-direction: column; gap: 10px; }
+  .group-card { background: #fff; border: 1px solid #e2e2e8; border-radius: 8px; padding: 16px 20px; cursor: pointer; transition: all 0.15s; position: relative; display: flex; align-items: center; justify-content: space-between; }
+  .group-card:hover { border-color: #b0b8cc; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .group-card.readonly { border-color: #e2e2e8; }
+  .group-card.readonly:hover { box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+
+  .card-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+  .card-info { flex: 1; min-width: 0; }
+  .card-name-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; flex-wrap: wrap; }
+  .card-name { font-size: 14px; font-weight: 600; color: #111; }
+  .badge-default { font-size: 10px; background: #f0a020; color: #fff; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
+  .lock-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10.5px; color: #999; background: #f4f4f6; border-radius: 3px; padding: 2px 7px; font-weight: 500; }
+
+  .flag-icon { font-size: 15px; cursor: pointer; opacity: 0.2; transition: all 0.2s; flex-shrink: 0; }
+  .flag-icon:hover { opacity: 0.5; }
+  .flag-icon.active { opacity: 1; }
+  .flag-icon.no-interact { cursor: default; }
+  .flag-icon.no-interact:hover { opacity: 0.2; }
+  .flag-icon.active.no-interact:hover { opacity: 1; }
+
+  .card-meta { font-size: 12px; color: #888; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .card-meta .dot { color: #d0d0d0; }
+
+  .card-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .policy-count { font-size: 11.5px; color: #888; background: #f8f8fa; padding: 4px 10px; border-radius: 5px; white-space: nowrap; position: relative; cursor: default; }
+  .policy-count:hover .tooltip { display: block; }
+  .tooltip { display: none; position: absolute; top: calc(100% + 6px); right: 0; z-index: 10; background: #333; color: #fff; font-size: 11px; padding: 8px 12px; border-radius: 6px; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,.15); }
+  .tooltip::before { content: ''; position: absolute; bottom: 100%; right: 12px; border: 5px solid transparent; border-bottom-color: #333; }
+
+  .more-btn { width: 28px; height: 28px; border: none; background: none; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 16px; }
+  .more-btn:hover { background: #f3f4f6; color: #555; }
+  .dropdown { display: none; position: absolute; top: calc(100% - 4px); right: 16px; z-index: 20; background: #fff; border: 1px solid #e2e2e8; border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); min-width: 140px; padding: 4px; }
+  .dropdown.show { display: block; }
+  .dropdown-item { display: block; width: 100%; padding: 7px 12px; border: none; background: none; text-align: left; font-size: 12.5px; cursor: pointer; border-radius: 4px; font-family: inherit; color: #333; }
+  .dropdown-item:hover { background: #f3f4f6; }
+  .dropdown-item.danger { color: #d44; }
+  .dropdown-item.danger:hover { background: #fff5f5; }
+
+  /* ─── Detail ─── */
+  .detail-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .detail-header .back-btn { font-size: 12.5px; color: #666; cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 4px 0; background: none; border: none; font-family: inherit; }
+  .detail-header .back-btn:hover { color: #222; }
+  .detail-header .group-name-edit { font-size: 18px; font-weight: 700; color: #111; border: none; outline: none; background: transparent; padding: 2px 4px; border-radius: 4px; font-family: inherit; }
+  .detail-header .group-name-edit:hover:not([readonly]) { background: #f5f5f8; }
+  .detail-header .group-name-edit:focus:not([readonly]) { background: #fff; box-shadow: 0 0 0 2px rgba(74,124,255,0.2); }
+  .detail-header .group-name-edit[readonly] { cursor: default; }
+
+  .readonly-banner { background: #f8f4ee; border: 1px solid #e8d8c0; border-radius: 6px; padding: 10px 14px; font-size: 12.5px; color: #9a7830; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+  .tabs { display: flex; border-bottom: 2px solid #e2e2e8; margin-bottom: 20px; }
+  .tab-item { padding: 10px 20px; font-size: 13px; font-weight: 500; color: #888; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s; }
+  .tab-item:hover { color: #444; }
+  .tab-item.active { color: #4a7cff; border-bottom-color: #4a7cff; font-weight: 600; }
+
+  .block-wrapper { position: relative; }
+  .block-overlay { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.6); z-index: 10; cursor: not-allowed; border-radius: 6px; }
+  .block-overlay.show { display: block; }
+
+  .data-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .data-table thead th { background: #f8f8fa; padding: 9px 12px; text-align: left; font-weight: 600; color: #555; border-bottom: 1px solid #e2e2e8; white-space: nowrap; }
+  .data-table tbody td { padding: 10px 12px; border-bottom: 1px solid #f0f0f4; color: #333; }
+  .data-table tbody tr:hover { background: #f9f9fc; }
+  .data-table .link { color: #4a7cff; cursor: pointer; font-weight: 500; }
+  .data-table .link:hover { text-decoration: underline; }
+
+  .detection-tag { display: inline-block; font-size: 11px; padding: 2px 6px; border-radius: 3px; background: #f0f0f4; color: #666; margin-right: 4px; cursor: default; }
+  .empty-state { text-align: center; padding: 40px 20px; color: #aaa; font-size: 13px; }
+
+  /* ─── Modals ─── */
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.35); z-index: 1000; justify-content: center; align-items: center; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: #fff; border-radius: 10px; width: 480px; max-height: 85vh; overflow-y: auto; box-shadow: 0 12px 40px rgba(0,0,0,0.15); }
+  .modal.wide { width: 580px; }
+  .modal-header { padding: 18px 20px 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f0f0f4; }
+  .modal-header h3 { font-size: 15px; font-weight: 700; color: #111; }
+  .modal-close { font-size: 20px; color: #999; cursor: pointer; background: none; border: none; line-height: 1; }
+  .modal-close:hover { color: #444; }
+  .modal-body { padding: 20px; }
+  .modal-footer { padding: 14px 20px; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid #f0f0f4; }
+
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 12.5px; font-weight: 600; color: #333; margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
+  .form-label .required { color: #e04040; }
+  .form-input { width: 100%; padding: 8px 12px; border: 1px solid #d0d0d8; border-radius: 5px; font-size: 13px; outline: none; font-family: inherit; }
+  .form-input:focus { border-color: #4a7cff; box-shadow: 0 0 0 2px rgba(74,124,255,0.12); }
+  .form-help { font-size: 11.5px; color: #999; margin-top: 4px; }
+  .form-error { font-size: 11.5px; color: #e04040; margin-top: 4px; display: none; }
+
+  .radio-group { display: flex; gap: 0; border: 1px solid #d0d0d8; border-radius: 5px; overflow: hidden; width: fit-content; }
+  .radio-item { padding: 6px 16px; font-size: 12.5px; cursor: pointer; background: #fff; border-right: 1px solid #d0d0d8; color: #666; transition: all 0.15s; }
+  .radio-item:last-child { border-right: none; }
+  .radio-item.active { background: #4a7cff; color: #fff; font-weight: 500; }
+
+  .spin-input { display: flex; align-items: center; border: 1px solid #d0d0d8; border-radius: 5px; overflow: hidden; width: 100px; }
+  .spin-input input { width: 50px; text-align: center; border: none; padding: 6px 4px; font-size: 13px; outline: none; font-family: inherit; }
+  .spin-input .spin-btn { width: 24px; height: 30px; border: none; background: #f8f8fa; cursor: pointer; font-size: 12px; color: #666; display: flex; align-items: center; justify-content: center; border-left: 1px solid #e8e8ec; }
+  .spin-input .spin-btn:hover { background: #eee; }
+
+  .exclude-list { max-height: 140px; overflow-y: auto; border: 1px solid #e8e8ec; border-radius: 5px; margin-top: 8px; }
+  .exclude-item { display: flex; align-items: center; padding: 7px 10px; border-bottom: 1px solid #f4f4f6; font-size: 12px; gap: 10px; }
+  .exclude-item:last-child { border-bottom: none; }
+  .exclude-item .ex-type { color: #888; width: 50px; flex-shrink: 0; }
+  .exclude-item .ex-content { flex: 1; color: #333; font-family: 'SF Mono','Consolas',monospace; font-size: 11.5px; }
+  .exclude-item .ex-del { color: #c44; cursor: pointer; font-size: 14px; }
+
+  .alert-modal { width: 380px; padding: 24px; text-align: center; }
+  .alert-modal h4 { font-size: 15px; font-weight: 700; margin-bottom: 10px; color: #111; }
+  .alert-modal p { font-size: 13px; color: #666; line-height: 1.6; margin-bottom: 20px; white-space: pre-line; }
+
+  .delete-confirm-info { background: #f8f8fa; border: 1px solid #e8e8ec; border-radius: 6px; padding: 10px 14px; margin: 12px 0; text-align: left; }
+  .delete-confirm-info .label { font-size: 11px; color: #888; margin-bottom: 6px; font-weight: 600; }
+  .policy-list { max-height: 120px; overflow-y: auto; margin: 8px 0; text-align: left; }
+  .policy-list .policy-item { display: flex; align-items: center; gap: 6px; padding: 5px 0; font-size: 12.5px; color: #333; }
+  .policy-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  .regex-test { background: #f8f8fa; border: 1px solid #e8e8ec; border-radius: 6px; padding: 12px; margin-top: 8px; display: none; }
+  .regex-test.show { display: block; }
+  .regex-test .test-row { display: flex; gap: 8px; align-items: center; }
+  .regex-test .test-result { font-size: 12px; margin-top: 6px; min-height: 18px; }
+  .regex-test .test-result.match { color: #2a8040; }
+  .regex-test .test-result.no-match { color: #c44; }
+
+  .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: #333; color: #fff; padding: 10px 24px; border-radius: 8px; font-size: 13px; opacity: 0; transition: all 0.3s; z-index: 2000; white-space: nowrap; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .proto-badge { position: fixed; top: 8px; right: 12px; background: #ff6b35; color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; z-index: 9999; letter-spacing: 0.05em; }
+  .role-switcher { position: fixed; top: 56px; right: 16px; background: #1e2532; border: 1px solid #333; border-radius: 8px; padding: 8px 14px; display: flex; align-items: center; box-shadow: 0 4px 16px rgba(0,0,0,0.1); z-index: 999; font-size: 12px; }
+  .role-switcher .role-label { font-weight: 600; margin-bottom: 0; margin-right: 8px; color: #ccc; font-size: 11px; }
+  .role-switcher .role-btns { display: flex; gap: 4px; }
+  .role-btn { padding: 5px 10px; border-radius: 4px; border: 1px solid #555; background: #2a3040; color: #bbb; cursor: pointer; font-size: 11.5px; font-family: inherit; font-weight: 500; transition: all 0.15s; }
+  .role-btn.active { background: #4a7cff; color: #fff; border-color: #4a7cff; }
+</style>
+</head>
+<body>
+<div class=&quot;proto-badge&quot;>PROTOTYPE v1.2</div>
+<div class=&quot;role-switcher&quot;><div class=&quot;role-label&quot;>관리자 역할 전환</div><div class=&quot;role-btns&quot;><button class=&quot;role-btn active&quot; onclick=&quot;switchRole('admin')&quot;>전체 관리자</button><button class=&quot;role-btn&quot; onclick=&quot;switchRole('dept')&quot;>부서관리자</button></div></div>
+
+<div class=&quot;app-shell&quot;>
+  <div class=&quot;sidebar&quot;>
+    <div class=&quot;sidebar-title&quot;>공통 정책센터 <span class=&quot;close-btn&quot;>×</span></div>
+    <div class=&quot;sidebar-section&quot;><div class=&quot;sidebar-section-label&quot;>공통</div><div class=&quot;sidebar-item active&quot;>민감정보 패턴 관리 그룹</div><div class=&quot;sidebar-item&quot;>사외 정책 IP 관리</div></div>
+    <div class=&quot;sidebar-section&quot;><div class=&quot;sidebar-section-label&quot;>정보유출방지</div><div class=&quot;sidebar-item&quot;>개별 매체 관리</div><div class=&quot;sidebar-item&quot;>파일첨부 확장자 관리 그룹</div><div class=&quot;sidebar-item&quot;>워터마크 관리</div><div class=&quot;sidebar-item&quot;>에이전트 정책 표시 설정</div></div>
+    <div class=&quot;sidebar-section&quot;><div class=&quot;sidebar-section-label&quot;>민감정보 보호</div><div class=&quot;sidebar-item&quot;>문서 분류 관리</div><div class=&quot;sidebar-item&quot;>예외 관리 그룹</div></div>
+    <div class=&quot;sidebar-section&quot;><div class=&quot;sidebar-section-label&quot;>취약점 점검</div><div class=&quot;sidebar-item&quot;>점검 항목 관리 그룹</div><div class=&quot;sidebar-item&quot;>보안등급 설정</div></div>
+    <div class=&quot;sidebar-section&quot;><div class=&quot;sidebar-section-label&quot;>업무환경관리</div><div class=&quot;sidebar-item&quot;>실행 제어 소프트웨어 관리</div><div class=&quot;sidebar-item&quot;>소프트웨어 자산 관리 그룹</div></div>
+    <div class=&quot;sidebar-section&quot;><div class=&quot;sidebar-section-label&quot;>백업</div><div class=&quot;sidebar-item&quot;>백업 저장소 관리</div><div class=&quot;sidebar-item&quot;>백업 알림 수신 관리</div></div>
+  </div>
+
+  <div class=&quot;main-area&quot;>
+    <div class=&quot;topbar&quot;><div class=&quot;breadcrumb&quot;>서비스 <span>›</span> 정책 <span>›</span> 공통 정책센터 <span>›</span> <span class=&quot;current&quot; id=&quot;breadcrumb-current&quot;>민감정보 패턴 관리 그룹</span></div></div>
+    <div class=&quot;content-area&quot;>
+
+      <!-- ═══ Group List ═══ -->
+      <div class=&quot;page active&quot; id=&quot;page-list&quot;>
+        <h1 class=&quot;page-title&quot;>민감정보 패턴 관리 그룹</h1>
+        <div class=&quot;page-info&quot;>ℹ️ 기본 패턴은 모든 그룹에 동일하게 제공되며, 관리자 정의 패턴은 그룹별로 개별 통계 처리됩니다. <a>더 알아보기</a></div>
+        <div class=&quot;toolbar&quot;>
+          <input class=&quot;search-input&quot; placeholder=&quot;그룹명 검색&quot; id=&quot;groupSearch&quot; oninput=&quot;renderCards()&quot;>
+          <span class=&quot;count&quot; id=&quot;groupCount&quot;>총 3개</span>
+          <button class=&quot;btn btn-primary&quot; onclick=&quot;openModal('createGroupModal')&quot;>추가하기</button>
+        </div>
+        <div class=&quot;card-list&quot; id=&quot;cardList&quot;></div>
+      </div>
+
+      <!-- ═══ Group Detail ═══ -->
+      <div class=&quot;page&quot; id=&quot;page-detail&quot;>
+        <div class=&quot;detail-header&quot;>
+          <button class=&quot;back-btn&quot; onclick=&quot;goToList()&quot;>← 목록</button>
+          <input class=&quot;group-name-edit&quot; id=&quot;detailGroupName&quot; value=&quot;&quot; maxlength=&quot;30&quot; onblur=&quot;saveGroupName()&quot;>
+          <span id=&quot;detailDefaultBadge&quot; class=&quot;badge-default&quot; style=&quot;display:none;&quot;>대표</span>
+          <span id=&quot;detailLockBadge&quot; class=&quot;lock-badge&quot; style=&quot;display:none;&quot;>🔒 읽기 전용</span>
+        </div>
+        <div class=&quot;readonly-banner&quot; id=&quot;readonlyBanner&quot; style=&quot;display:none;&quot;>🔒 이 그룹은 다른 관리자가 생성한 그룹입니다. 수정이 필요한 경우 복사하여 새로운 그룹을 생성해주세요.</div>
+
+        <div class=&quot;tabs&quot;>
+          <div class=&quot;tab-item active&quot; onclick=&quot;switchTab('basic')&quot;>기본 패턴</div>
+          <div class=&quot;tab-item&quot; onclick=&quot;switchTab('custom')&quot;>관리자 정의 패턴</div>
+        </div>
+
+        <div id=&quot;tab-basic&quot;>
+          <div class=&quot;block-wrapper&quot;>
+            <div class=&quot;block-overlay&quot; id=&quot;basicBlockOverlay&quot;></div>
+            <div class=&quot;page-info&quot; style=&quot;margin-bottom:16px;&quot;>ℹ️ 기본 패턴은 시스템에서 제공됩니다. 패턴별로 최소 검출 수, 검출 옵션, 제외 패턴을 그룹별로 설정할 수 있습니다.</div>
+            <table class=&quot;data-table&quot;><thead><tr><th style=&quot;width:140px&quot;>패턴 유형</th><th style=&quot;width:90px&quot;>최소 검출 수</th><th>검출 옵션</th><th style=&quot;width:60px&quot;></th></tr></thead><tbody id=&quot;basicBody&quot;></tbody></table>
+          </div>
+        </div>
+
+        <div id=&quot;tab-custom&quot; style=&quot;display:none;&quot;>
+          <div class=&quot;block-wrapper&quot;>
+            <div class=&quot;block-overlay&quot; id=&quot;customBlockOverlay&quot;></div>
+            <div class=&quot;toolbar&quot; id=&quot;customToolbar&quot;>
+              <span style=&quot;font-size:12.5px;color:#888;&quot; id=&quot;customSelectCount&quot;>0개 선택</span>
+              <span style=&quot;flex:1;&quot;></span>
+              <button class=&quot;btn btn-primary&quot; id=&quot;btnAddCustom&quot; onclick=&quot;openCustomAdd()&quot;>추가하기</button>
+              <button class=&quot;btn btn-secondary&quot; style=&quot;color:#d44;border-color:#e8a0a0;&quot; id=&quot;btnDelCustom&quot; onclick=&quot;deleteSelectedCustom()&quot;>삭제하기</button>
+            </div>
+            <table class=&quot;data-table&quot; id=&quot;customTable&quot;><thead><tr><th style=&quot;width:40px&quot;><input type=&quot;checkbox&quot; id=&quot;checkAll&quot; onchange=&quot;toggleAllCustom(this)&quot;></th><th style=&quot;width:70px&quot;>유형</th><th>패턴명</th><th style=&quot;width:80px&quot;>최소 검출 수</th><th>내용</th><th style=&quot;width:80px&quot;>검출 옵션</th><th style=&quot;width:60px&quot;></th></tr></thead><tbody id=&quot;customBody&quot;></tbody></table>
+            <div class=&quot;empty-state&quot; id=&quot;customEmpty&quot; style=&quot;display:none;&quot;>등록된 관리자 정의 패턴이 없습니다.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Modals ═══ -->
+<div class=&quot;modal-overlay&quot; id=&quot;createGroupModal&quot;><div class=&quot;modal&quot;><div class=&quot;modal-header&quot;><h3>민감정보 패턴 관리 그룹 생성</h3><button class=&quot;modal-close&quot; onclick=&quot;closeModal('createGroupModal')&quot;>×</button></div><div class=&quot;modal-body&quot;><div class=&quot;form-group&quot;><div class=&quot;form-label&quot;>관리 그룹명 <span class=&quot;required&quot;>*</span></div><input class=&quot;form-input&quot; id=&quot;newGroupName&quot; placeholder=&quot;그룹명을 입력하세요&quot; maxlength=&quot;30&quot; oninput=&quot;validateCreate()&quot;><div class=&quot;form-help&quot;>최대 30자</div><div class=&quot;form-error&quot; id=&quot;createError&quot;>이미 등록된 그룹명입니다.</div></div></div><div class=&quot;modal-footer&quot;><button class=&quot;btn btn-secondary&quot; onclick=&quot;closeModal('createGroupModal')&quot;>취소</button><button class=&quot;btn btn-primary&quot; id=&quot;btnCreate&quot; disabled onclick=&quot;createGroup()&quot;>생성하기</button></div></div></div>
+
+<div class=&quot;modal-overlay&quot; id=&quot;deleteGroupModal&quot;><div class=&quot;modal&quot;><div class=&quot;modal-header&quot;><h3>이 민감정보 패턴 그룹을 삭제하시겠습니까?</h3><button class=&quot;modal-close&quot; onclick=&quot;closeModal('deleteGroupModal')&quot;>×</button></div><div class=&quot;modal-body&quot;><p style=&quot;font-size:12.5px;color:#666;margin-bottom:12px;&quot;>해당 그룹을 적용 중인 정책을 확인해주세요.<br>삭제 시 적용 중인 정책에서는 '대표 그룹'으로 자동 설정 변경됩니다.</p><div class=&quot;delete-confirm-info&quot; id=&quot;deleteGroupInfo&quot;></div></div><div class=&quot;modal-footer&quot;><button class=&quot;btn btn-secondary&quot; onclick=&quot;closeModal('deleteGroupModal')&quot;>취소</button><button class=&quot;btn btn-danger-fill&quot; onclick=&quot;confirmDeleteGroup()&quot;>삭제하기</button></div></div></div>
+
+<div class=&quot;modal-overlay&quot; id=&quot;alertModal&quot;><div class=&quot;modal alert-modal&quot;><h4 id=&quot;alertTitle&quot;>—</h4><p id=&quot;alertMsg&quot;>—</p><button class=&quot;btn btn-primary&quot; onclick=&quot;closeModal('alertModal')&quot; style=&quot;width:100%;&quot;>확인</button></div></div>
+
+<div class=&quot;modal-overlay&quot; id=&quot;confirmDefaultModal&quot;><div class=&quot;modal&quot; style=&quot;width:380px;&quot;><div class=&quot;modal-body&quot; style=&quot;padding:24px;text-align:center;&quot;><h4 style=&quot;font-size:15px;font-weight:700;margin-bottom:10px;&quot; id=&quot;confirmDefaultText&quot;>—</h4><p style=&quot;font-size:13px;color:#666;line-height:1.6;&quot;>그룹이 지정되지 않은 정책 세트에 자동 적용됩니다.</p></div><div class=&quot;modal-footer&quot;><button class=&quot;btn btn-secondary&quot; onclick=&quot;closeModal('confirmDefaultModal')&quot;>취소</button><button class=&quot;btn btn-primary&quot; onclick=&quot;confirmSetDefault()&quot;>확인</button></div></div></div>
+
+<!-- 기본 패턴 상세 설정 -->
+<div class=&quot;modal-overlay&quot; id=&quot;basicModal&quot;><div class=&quot;modal wide&quot;><div class=&quot;modal-header&quot;><h3 id=&quot;basicModalTitle&quot;>주민등록번호 상세 설정</h3><button class=&quot;modal-close&quot; onclick=&quot;closeModal('basicModal')&quot;>×</button></div><div class=&quot;modal-body&quot;><div style=&quot;display:flex;gap:20px;&quot;><div style=&quot;flex:1;&quot;><div class=&quot;form-group&quot;><div class=&quot;form-label&quot;>최소 검출 수</div><div class=&quot;form-help&quot; style=&quot;margin-bottom:6px;&quot;>설정한 최소 검출 수 이상 탐지되면 검출로 간주합니다.</div><div class=&quot;spin-input&quot;><input type=&quot;number&quot; value=&quot;1&quot; min=&quot;1&quot; max=&quot;100&quot; id=&quot;basicMinCount&quot;><div style=&quot;display:flex;flex-direction:column;&quot;><button class=&quot;spin-btn&quot; onclick=&quot;spinVal('basicMinCount',1)&quot;>▲</button><button class=&quot;spin-btn&quot; onclick=&quot;spinVal('basicMinCount',-1)&quot;>▼</button></div></div></div><div id=&quot;basicOptionArea&quot;></div></div><div style=&quot;flex:1;&quot;><div class=&quot;form-group&quot;><div class=&quot;form-label&quot;>제외 패턴</div><div class=&quot;form-help&quot;>예외적으로 제외할 키워드 및 정규식을 등록합니다.</div><button class=&quot;btn btn-secondary btn-sm&quot; style=&quot;margin-top:6px;&quot; onclick=&quot;openModal('excludeModal')&quot;>추가</button><div class=&quot;exclude-list&quot; id=&quot;basicExcludeList&quot;><div class=&quot;exclude-item&quot;><span class=&quot;ex-type&quot;>정규식</span><span class=&quot;ex-content&quot;>[a-zA-Z]{1}[0-9]{7}</span><span class=&quot;ex-del&quot; onclick=&quot;this.parentElement.remove()&quot;>×</span></div><div class=&quot;exclude-item&quot;><span class=&quot;ex-type&quot;>키워드</span><span class=&quot;ex-content&quot;>1111111-1101111</span><span class=&quot;ex-del&quot; onclick=&quot;this.parentElement.remove()&quot;>×</span></div></div></div></div></div></div><div class=&quot;modal-footer&quot;><button class=&quot;btn btn-secondary&quot; onclick=&quot;closeModal('basicModal')&quot;>취소</button><button class=&quot;btn btn-primary&quot; onclick=&quot;closeModal('basicModal');showToast('패턴의 옵션 설정을 변경하였습니다.')&quot;>적용하기</button></div></div></div>
+
+<!-- 관리자 정의 패턴 등록/수정 -->
+<div class=&quot;modal-overlay&quot; id=&quot;customModal&quot;><div class=&quot;modal wide&quot;><div class=&quot;modal-header&quot;><h3 id=&quot;customModalTitle&quot;>관리자 정의 패턴 등록</h3><button class=&quot;modal-close&quot; onclick=&quot;closeModal('customModal')&quot;>×</button></div><div class=&quot;modal-body&quot;><div style=&quot;display:flex;gap:20px;&quot;><div style=&quot;flex:1;&quot;><div class=&quot;form-group&quot;><div class=&quot;form-label&quot;>패턴명 <span class=&quot;required&quot;>*</span></div><input class=&quot;form-input&quot; id=&quot;cName&quot; placeholder=&quot;패턴명 입력&quot; maxlength=&quot;50&quot;></div><div class=&quot;form-group&quot;><div class=&quot;form-label&quot;>패턴 내용 <span class=&quot;required&quot;>*</span></div><div class=&quot;radio-group&quot; style=&quot;margin-bottom:8px;&quot;><div class=&quot;radio-item active&quot; onclick=&quot;switchPType(this,'kw')&quot;>키워드</div><div class=&quot;radio-item&quot; onclick=&quot;switchPType(this,'re')&quot;>정규식</div></div><input class=&quot;form-input&quot; id=&quot;cContent&quot; placeholder=&quot;패턴 내용 입력&quot;><div class=&quot;regex-test&quot; id=&quot;regexTest&quot;><div class=&quot;form-label&quot; style=&quot;font-size:11.5px;&quot;>정규식 테스트하기</div><div class=&quot;test-row&quot;><input class=&quot;form-input&quot; id=&quot;regexInput&quot; placeholder=&quot;정규식에 해당되는 문자열 입력&quot; style=&quot;flex:1;&quot;><button class=&quot;btn btn-secondary btn-sm&quot; onclick=&quot;testRegex()&quot;>확인</button></div><div class=&quot;test-result&quot; id=&quot;regexResult&quot;></div></div></div><div class=&quot;form-group&quot;><div class=&quot;form-label&quot;>최소 검출 수 <span class=&quot;required&quot;>*</span></div><div class=&quot;form-help&quot; style=&quot;margin-bottom:6px;&quot;>설정한 최소 검출 수 이상 탐지되면 검출로 간주합니다.</div><div class=&quot;spin-input&quot;><input type=&quot;number&quot; value=&quot;1&quot; min=&quot;1&quot; max=&quot;100&quot; id=&quot;cMinCount&quot;><div style=&quot;display:flex;flex-direction:column;&quot;><button class=&quot;spin-btn&quot; onclick=&quot;spinVal('cMinCount',1)&quot;>▲</button><button class=&quot;spin-btn&quot; onclick=&quot;spinVal('cMinCount',-1)&quot;>▼</button></div></div></div></div><div style=&quot;flex:1;&quot;><div class=&quot;form-group&quot;><div class=&quot;form-label&quot;>제외 패턴</div><div class=&quot;form-help&quot;>예외적으로 제외할 키워드 및 정규식을 등록합니다.</div><button class=&quot;btn btn-secondary btn-sm&quot; style=&quot;margin-top:6px;&quot; onclick=&quot;openModal('excludeModal')&quot;>추가</button><div class=&quot;exclude-list&quot; id=&quot;customExcludeList&quot;></div><div style=&quot;color:#aaa;font-size:12px;padding:10px;text-align:center;&quot; id=&quot;cExEmpty&quot;>등록된 제외 패턴이 없습니다.</div></div></div></div></div><div class=&quot;modal-footer&quot;><button class=&quot;btn btn-secondary&quot; onclick=&quot;closeModal('customModal')&quot;>취소</button><button class=&quot;btn btn-primary&quot; id=&quot;btnSaveCustom&quot; onclick=&quot;saveCustom()&quot;>추가하기</button></div></div></div>
+
+<!-- 제외 패턴 추가 -->
+<div class=&quot;modal-overlay&quot; id=&quot;excludeModal&quot;><div class=&quot;modal&quot; style=&quot;width:400px;&quot;><div class=&quot;modal-header&quot;><h3>제외 패턴 추가</h3><button class=&quot;modal-close&quot; onclick=&quot;closeModal('excludeModal')&quot;>×</button></div><div class=&quot;modal-body&quot;><div class=&quot;form-group&quot;><div class=&quot;form-label&quot;>패턴 내용 <span class=&quot;required&quot;>*</span></div><div class=&quot;radio-group&quot; style=&quot;margin-bottom:8px;&quot;><div class=&quot;radio-item active&quot; onclick=&quot;switchExType(this,'kw')&quot;>키워드</div><div class=&quot;radio-item&quot; onclick=&quot;switchExType(this,'re')&quot;>정규식</div></div><input class=&quot;form-input&quot; id=&quot;exContent&quot; placeholder=&quot;패턴 내용 입력&quot;><div class=&quot;regex-test&quot; id=&quot;exRegexTest&quot;><div class=&quot;form-label&quot; style=&quot;font-size:11.5px;&quot;>정규식 테스트하기</div><div class=&quot;test-row&quot;><input class=&quot;form-input&quot; id=&quot;exRegexInput&quot; placeholder=&quot;문자열 입력&quot; style=&quot;flex:1;&quot;><button class=&quot;btn btn-secondary btn-sm&quot; onclick=&quot;testExRegex()&quot;>확인</button></div><div class=&quot;test-result&quot; id=&quot;exRegexResult&quot;></div></div></div></div><div class=&quot;modal-footer&quot;><button class=&quot;btn btn-secondary&quot; onclick=&quot;closeModal('excludeModal')&quot;>취소</button><button class=&quot;btn btn-primary&quot; onclick=&quot;addExclude()&quot;>추가하기</button></div></div></div>
+
+<div class=&quot;toast&quot; id=&quot;toast&quot;></div>
+
+<script>
+let role='admin', curGroup=null, pendingDel=null, pendingDefault=null, exType='kw';
+
+const groups=[
+  {name:'기본 패턴 관리 그룹',isDefault:true,owner:'me',ownerName:'나(전체관리자)',customCount:3,modDate:'2026.02.05',policyCount:9,policies:['전사 공통 정책','기획디자인팀 정책','테스트 정책','B 정책','외 5개']},
+  {name:'계열사 전용 패턴',isDefault:false,owner:'me',ownerName:'나(전체관리자)',customCount:0,modDate:'2026.02.05',policyCount:2,policies:['계열사A 정책','계열사B 정책']},
+  {name:'일본 지사 패턴',isDefault:false,owner:'other',ownerName:'김지사(부서관리자)',customCount:5,modDate:'2026.02.05',policyCount:0,policies:[]},
+];
+
+const basicPatterns=[
+  {name:'주민등록번호',min:1,opts:['강도 1단계','구분자 2단계','제외 패턴 2'],adv:true},
+  {name:'일반전화번호',min:1,opts:['제외 패턴 2'],adv:false},
+  {name:'휴대전화번호',min:1,opts:['제외 패턴 2'],adv:false},
+  {name:'외국인등록번호',min:1,opts:['제외 패턴 2'],adv:false},
+  {name:'여권번호',min:1,opts:[],adv:false},
+  {name:'운전면허번호',min:1,opts:['제외 패턴 2'],adv:false},
+  {name:'건강보험증번호',min:1,opts:['제외 패턴 1'],adv:false},
+  {name:'계좌번호',min:1,opts:['제외 패턴 1'],adv:false},
+  {name:'카드번호',min:1,opts:[],adv:false},
+  {name:'이메일',min:1,opts:[],adv:false},
+  {name:'사업자등록번호',min:1,opts:[],adv:false},
+  {name:'법인등록번호',min:1,opts:[],adv:false},
+];
+
+const customPatterns=[
+  {id:1,gid:0,type:'정규식',name:'특수문자 신규주민',min:1,content:'\\d{2}([0][1-9]...)',ex:1},
+  {id:2,gid:0,type:'키워드',name:'대외비',min:1,content:'대외비',ex:0},
+  {id:3,gid:0,type:'키워드',name:'비밀문서',min:2,content:'비밀문서',ex:0},
+  {id:4,gid:2,type:'정규식',name:'일본 여권',min:1,content:'[A-Z]{2}\\d{7}',ex:0},
+  {id:5,gid:2,type:'키워드',name:'기밀',min:1,content:'機密',ex:0},
+];
+
+function isRO(g){return role==='dept'&amp;&amp;g.owner==='other';}
+
+function switchRole(r){role=r;document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');if(document.getElementById('page-detail').classList.contains('active'))goDetail(curGroup);else renderCards();}
+
+// ═══ CARDS ═══
+function renderCards(){
+  const q=(document.getElementById('groupSearch')?.value||'').toLowerCase();
+  const f=groups.map((g,i)=>({...g,_i:i})).filter(g=>g.name.toLowerCase().includes(q));
+  document.getElementById('groupCount').textContent=`총 ${f.length}개`;
+
+  document.getElementById('cardList').innerHTML=f.map(g=>{
+    const i=g._i, ro=isRO(g);
+    let icons='';
+    if(g.isDefault) icons+=`<span class=&quot;badge-default&quot;>대표</span>`;
+    if(ro) icons+=`<span class=&quot;lock-badge&quot;>🔒 읽기 전용</span>`;
+
+    let fc='flag-icon';
+    if(g.isDefault)fc+=' active';
+    if(role==='dept')fc+=' no-interact';
+    let fclick='';
+    if(role==='admin'&amp;&amp;!g.isDefault) fclick=`onclick=&quot;event.stopPropagation();trySetDefault(${i})&quot;`;
+
+    let meta=[`관리자 정의 패턴 ${g.customCount}개`];
+    if(ro)meta.push(`생성자: ${g.ownerName}`);
+    meta.push(`수정 일시 ${g.modDate}`);
+
+    let ph=g.policyCount>0
+      ?`<div class=&quot;policy-count&quot;>${g.policyCount}개 정책 적용 중<div class=&quot;tooltip&quot;>${g.policies.join('<br>')}</div></div>`
+      :`<div class=&quot;policy-count&quot; style=&quot;color:#bbb;&quot;>0개 정책 적용 중</div>`;
+
+    let dd=`<button class=&quot;dropdown-item&quot; onclick=&quot;event.stopPropagation();copyGroup(${i})&quot;>복사하기</button>`;
+    const canDel=(role==='admin')||(role==='dept'&amp;&amp;g.owner==='me');
+    if(canDel&amp;&amp;!g.isDefault) dd+=`<button class=&quot;dropdown-item danger&quot; onclick=&quot;event.stopPropagation();tryDelete(${i})&quot;>삭제하기</button>`;
+
+    return `<div class=&quot;group-card${ro?' readonly':''}&quot; onclick=&quot;goDetail(${i})&quot;>
+      <div class=&quot;card-left&quot;>
+        <span class=&quot;${fc}&quot; ${fclick} title=&quot;${g.isDefault?'대표 그룹':(role==='admin'?'대표 그룹으로 설정':'')}&quot;>🚩</span>
+        <div class=&quot;card-info&quot;>
+          <div class=&quot;card-name-row&quot;><span class=&quot;card-name&quot;>${g.name}</span>${icons}</div>
+          <div class=&quot;card-meta&quot;>${meta.map(m=>`<span>${m}</span>`).join('<span class=&quot;dot&quot;>·</span>')}</div>
+        </div>
+      </div>
+      <div class=&quot;card-right&quot;>${ph}<button class=&quot;more-btn&quot; onclick=&quot;event.stopPropagation();toggleDD('dd-${i}')&quot;>⋯</button><div class=&quot;dropdown&quot; id=&quot;dd-${i}&quot;>${dd}</div></div>
+    </div>`;
+  }).join('');
+}
+
+// ═══ DETAIL ═══
+function goToList(){document.getElementById('page-list').classList.add('active');document.getElementById('page-detail').classList.remove('active');document.getElementById('breadcrumb-current').textContent='민감정보 패턴 관리 그룹';renderCards();}
+
+function goDetail(idx){
+  curGroup=idx;const g=groups[idx];const ro=isRO(g);
+  document.getElementById('page-list').classList.remove('active');
+  document.getElementById('page-detail').classList.add('active');
+  document.getElementById('breadcrumb-current').textContent=g.name;
+  document.getElementById('detailGroupName').value=g.name;
+  document.getElementById('detailGroupName').readOnly=ro;
+  document.getElementById('detailDefaultBadge').style.display=g.isDefault?'':'none';
+  document.getElementById('detailLockBadge').style.display=ro?'':'none';
+  document.getElementById('readonlyBanner').style.display=ro?'flex':'none';
+  document.getElementById('basicBlockOverlay').classList.toggle('show',ro);
+  document.getElementById('customBlockOverlay').classList.toggle('show',ro);
+  switchTab('basic');renderBasic();renderCustom();
+}
+
+function switchTab(t){document.querySelectorAll('.tab-item').forEach((e,i)=>e.classList.toggle('active',(t==='basic'&amp;&amp;i===0)||(t==='custom'&amp;&amp;i===1)));document.getElementById('tab-basic').style.display=t==='basic'?'':'none';document.getElementById('tab-custom').style.display=t==='custom'?'':'none';}
+
+function renderBasic(){
+  document.getElementById('basicBody').innerHTML=basicPatterns.map(p=>`<tr><td><span class=&quot;link&quot; onclick=&quot;openBasic('${p.name}')&quot;>${p.name}</span></td><td>${p.min}개</td><td>${p.opts.length?p.opts.map(o=>`<span class=&quot;detection-tag&quot;>${o}</span>`).join(''):'<span style=&quot;color:#ccc;&quot;>—</span>'}</td><td><button class=&quot;btn btn-secondary btn-sm&quot; onclick=&quot;openBasic('${p.name}')&quot;>설정</button></td></tr>`).join('');
+}
+
+function renderCustom(){
+  const gp=customPatterns.filter(p=>p.gid===curGroup);
+  document.getElementById('customEmpty').style.display=gp.length===0?'block':'none';
+  document.getElementById('customTable').style.display=gp.length===0?'none':'';
+  document.getElementById('customBody').innerHTML=gp.map(p=>`<tr><td><input type=&quot;checkbox&quot; class=&quot;cc&quot; value=&quot;${p.id}&quot; onchange=&quot;updateCC()&quot;></td><td>${p.type}</td><td><span class=&quot;link&quot; onclick=&quot;openCustomEdit(${p.id})&quot;>${p.name}</span></td><td>${p.min}개</td><td style=&quot;font-family:'SF Mono','Consolas',monospace;font-size:11.5px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;&quot;>${p.content}</td><td>${p.ex>0?`<span class=&quot;detection-tag&quot;>제외 패턴 ${p.ex}</span>`:'<span style=&quot;color:#ccc;&quot;>—</span>'}</td><td><button class=&quot;btn btn-secondary btn-sm&quot; onclick=&quot;openCustomEdit(${p.id})&quot;>설정</button></td></tr>`).join('');
+}
+
+// ═══ GROUP CRUD ═══
+function validateCreate(){const n=document.getElementById('newGroupName').value.trim();const dup=groups.some(g=>g.name===n);document.getElementById('createError').style.display=dup?'block':'none';document.getElementById('btnCreate').disabled=!n||dup;}
+function createGroup(){const n=document.getElementById('newGroupName').value.trim();groups.push({name:n,isDefault:false,owner:'me',ownerName:role==='dept'?'나(부서관리자)':'나(전체관리자)',customCount:0,modDate:'2026.03.20',policyCount:0,policies:[]});closeModal('createGroupModal');document.getElementById('newGroupName').value='';renderCards();showToast(`'${n}' 관리 그룹을 생성하였습니다.`);}
+function copyGroup(i){closeAllDD();const s=groups[i];let cn=s.name+' (복사본)';if(cn.length>30)cn=cn.substring(0,27)+'...';groups.push({name:cn,isDefault:false,owner:'me',ownerName:role==='dept'?'나(부서관리자)':'나(전체관리자)',customCount:s.customCount,modDate:'2026.03.20',policyCount:0,policies:[]});renderCards();showToast(`'${cn}' 관리 그룹을 생성하였습니다.`);}
+function tryDelete(i){closeAllDD();const g=groups[i];if(g.isDefault){document.getElementById('alertTitle').textContent='삭제 불가';document.getElementById('alertMsg').textContent='대표 관리 그룹을 해제 후 삭제해주세요.';openModal('alertModal');return;}if(groups.length<=1){document.getElementById('alertTitle').textContent='삭제 불가';document.getElementById('alertMsg').textContent='최소 1개 이상의 그룹이 필요합니다.';openModal('alertModal');return;}pendingDel=i;let info=`<div class=&quot;label&quot;>선택 그룹</div><div style=&quot;font-size:13px;font-weight:600;margin-bottom:8px;&quot;>${g.name} / 관리자 정의 패턴 ${g.customCount}개</div>`;if(g.policyCount>0)info+=`<div class=&quot;label&quot;>적용된 정책 (${g.policyCount})</div><div class=&quot;policy-list&quot;>${g.policies.map(p=>`<div class=&quot;policy-item&quot;><span class=&quot;policy-dot&quot; style=&quot;background:#4a7cff;&quot;></span>${p}</div>`).join('')}</div>`;document.getElementById('deleteGroupInfo').innerHTML=info;openModal('deleteGroupModal');}
+function confirmDeleteGroup(){const n=groups[pendingDel].name;groups.splice(pendingDel,1);closeModal('deleteGroupModal');renderCards();showToast(`'${n}' 관리 그룹을 삭제하였습니다.`);}
+function trySetDefault(i){pendingDefault=i;document.getElementById('confirmDefaultText').textContent=`대표 그룹을 '${groups[i].name}'(으)로 변경하시겠습니까?`;openModal('confirmDefaultModal');}
+function confirmSetDefault(){groups.forEach(g=>g.isDefault=false);groups[pendingDefault].isDefault=true;closeModal('confirmDefaultModal');renderCards();showToast(`대표 그룹을 '${groups[pendingDefault].name}'(으)로 변경하였습니다.`);}
+function saveGroupName(){const g=groups[curGroup];const n=document.getElementById('detailGroupName').value.trim();if(n&amp;&amp;n!==g.name){g.name=n;showToast('그룹명이 변경되었습니다.');}}
+
+// ═══ BASIC PATTERN ═══
+function openBasic(name){document.getElementById('basicModalTitle').textContent=name+' 상세 설정';const p=basicPatterns.find(b=>b.name===name);const area=document.getElementById('basicOptionArea');area.innerHTML=p&amp;&amp;p.adv?`<div class=&quot;form-group&quot;><div class=&quot;form-label&quot;>주민등록번호 옵션</div></div><div class=&quot;form-group&quot;><div class=&quot;form-label&quot; style=&quot;font-size:12px;&quot;>검출 강도</div><div class=&quot;radio-group&quot;><div class=&quot;radio-item active&quot;>1단계</div><div class=&quot;radio-item&quot;>2단계</div></div><div class=&quot;form-help&quot; style=&quot;margin-top:6px;&quot;>1단계: 글자 사이에 공백, 엔터가 없는 주민번호만 검출합니다.</div></div><div class=&quot;form-group&quot;><div class=&quot;form-label&quot; style=&quot;font-size:12px;&quot;>구분자 강도</div><div class=&quot;radio-group&quot;><div class=&quot;radio-item active&quot;>1단계</div><div class=&quot;radio-item&quot;>2단계</div><div class=&quot;radio-item&quot;>3단계</div></div></div><div class=&quot;form-group&quot;><div class=&quot;form-label&quot; style=&quot;font-size:12px;&quot;>비식별 패턴 검출</div><div class=&quot;radio-group&quot;><div class=&quot;radio-item active&quot;>OFF</div><div class=&quot;radio-item&quot;>ON</div></div></div>`:'';openModal('basicModal');}
+
+// ═══ CUSTOM PATTERN ═══
+function updateCC(){document.getElementById('customSelectCount').textContent=document.querySelectorAll('.cc:checked').length+'개 선택';}
+function toggleAllCustom(el){document.querySelectorAll('.cc').forEach(c=>c.checked=el.checked);updateCC();}
+function openCustomAdd(){document.getElementById('customModalTitle').textContent='관리자 정의 패턴 등록';document.getElementById('cName').value='';document.getElementById('cContent').value='';document.getElementById('cMinCount').value=1;document.getElementById('btnSaveCustom').textContent='추가하기';document.getElementById('btnSaveCustom').dataset.mode='add';openModal('customModal');}
+function openCustomEdit(id){const p=customPatterns.find(x=>x.id===id);document.getElementById('customModalTitle').textContent='관리자 정의 패턴 수정';document.getElementById('cName').value=p.name;document.getElementById('cContent').value=p.content;document.getElementById('cMinCount').value=p.min;document.getElementById('btnSaveCustom').textContent='적용하기';document.getElementById('btnSaveCustom').dataset.mode='edit';openModal('customModal');}
+function saveCustom(){const n=document.getElementById('cName').value.trim(),c=document.getElementById('cContent').value.trim();if(!n||!c){showToast('필수 항목을 입력해주세요.');return;}const isAdd=document.getElementById('btnSaveCustom').dataset.mode==='add';if(isAdd){customPatterns.push({id:Date.now(),gid:curGroup,type:'키워드',name:n,min:parseInt(document.getElementById('cMinCount').value),content:c,ex:0});groups[curGroup].customCount=customPatterns.filter(p=>p.gid===curGroup).length;}closeModal('customModal');renderCustom();showToast(isAdd?`'${n}' 관리자 패턴을 추가하였습니다.`:`'${n}' 관리자 패턴이 수정되었습니다.`);}
+function deleteSelectedCustom(){const ch=document.querySelectorAll('.cc:checked');if(!ch.length){showToast('삭제할 항목을 선택해주세요.');return;}if(!confirm(`선택한 ${ch.length}개 패턴을 삭제하시겠습니까?`))return;ch.forEach(c=>{const idx=customPatterns.findIndex(p=>p.id===parseInt(c.value));if(idx>-1)customPatterns.splice(idx,1);});groups[curGroup].customCount=customPatterns.filter(p=>p.gid===curGroup).length;renderCustom();showToast(ch.length+'개 패턴이 삭제되었습니다.');}
+
+function switchPType(el,t){el.parentElement.querySelectorAll('.radio-item').forEach(r=>r.classList.remove('active'));el.classList.add('active');document.getElementById('regexTest').classList.toggle('show',t==='re');}
+function testRegex(){const p=document.getElementById('cContent').value,t=document.getElementById('regexInput').value,el=document.getElementById('regexResult');try{if(new RegExp(p).test(t)){el.textContent='O 정규식과 일치합니다.';el.className='test-result match';}else{el.textContent='X 정규식과 일치하지 않습니다.';el.className='test-result no-match';}}catch(e){el.textContent='X 올바른 정규식이 아닙니다.';el.className='test-result no-match';}}
+
+// ═══ EXCLUDE ═══
+function switchExType(el,t){exType=t;el.parentElement.querySelectorAll('.radio-item').forEach(r=>r.classList.remove('active'));el.classList.add('active');document.getElementById('exRegexTest').classList.toggle('show',t==='re');}
+function testExRegex(){const p=document.getElementById('exContent').value,t=document.getElementById('exRegexInput').value,el=document.getElementById('exRegexResult');try{if(new RegExp(p).test(t)){el.textContent='O 정규식과 일치합니다.';el.className='test-result match';}else{el.textContent='X 정규식과 일치하지 않습니다.';el.className='test-result no-match';}}catch(e){el.textContent='X 올바른 정규식이 아닙니다.';el.className='test-result no-match';}}
+function addExclude(){const c=document.getElementById('exContent').value.trim();if(!c)return;const list=document.getElementById('customExcludeList');const item=document.createElement('div');item.className='exclude-item';item.innerHTML=`<span class=&quot;ex-type&quot;>${exType==='re'?'정규식':'키워드'}</span><span class=&quot;ex-content&quot;>${c}</span><span class=&quot;ex-del&quot; onclick=&quot;this.parentElement.remove()&quot;>×</span>`;list.appendChild(item);document.getElementById('cExEmpty').style.display='none';closeModal('excludeModal');document.getElementById('exContent').value='';list.scrollTop=list.scrollHeight;}
+
+// ═══ UTIL ═══
+function toggleDD(id){closeAllDD();document.getElementById(id).classList.toggle('show');}
+function closeAllDD(){document.querySelectorAll('.dropdown').forEach(d=>d.classList.remove('show'));}
+document.addEventListener('click',closeAllDD);
+function openModal(id){document.getElementById(id).classList.add('show');}
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+function spinVal(id,d){const el=document.getElementById(id);el.value=Math.max(1,Math.min(100,parseInt(el.value||1)+d));}
+
+renderCards();
+</script>
+</body>
+</html>
+"></iframe>
+    <iframe class="frame" id="frame-extension" srcdoc="<!DOCTYPE html>
+<html lang=&quot;ko-KR&quot;>
+<head>
+<meta charset=&quot;UTF-8&quot;>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;>
+<title>파일첨부 확장자 관리 그룹 — UI 프로토타입 v1.0</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&amp;display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Noto Sans KR', -apple-system, sans-serif; color: #222; background: #f5f5f8; font-size: 13px; -webkit-font-smoothing: antialiased; }
+
+  /* ─── Layout ─── */
+  .app-shell { display: flex; height: 100vh; overflow: hidden; }
+  .sidebar { width: 220px; background: #1e2532; color: #b8c0cc; flex-shrink: 0; overflow-y: auto; padding: 16px 0; }
+  .sidebar-title { font-size: 13px; font-weight: 600; color: #fff; padding: 0 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .sidebar-title .close-btn { margin-left: auto; cursor: pointer; color: #667; font-size: 16px; }
+  .sidebar-section { padding: 6px 0; }
+  .sidebar-section-label { font-size: 11px; font-weight: 600; color: #667; padding: 4px 16px; letter-spacing: 0.05em; }
+  .sidebar-item { padding: 7px 16px 7px 24px; font-size: 12.5px; cursor: pointer; transition: background 0.15s; }
+  .sidebar-item:hover { background: rgba(255,255,255,0.06); }
+  .sidebar-item.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 500; }
+  .main-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .topbar { height: 48px; background: #fff; border-bottom: 1px solid #e2e2e8; display: flex; align-items: center; padding: 0 24px; font-size: 13px; color: #888; flex-shrink: 0; }
+  .topbar .breadcrumb { display: flex; align-items: center; gap: 6px; }
+  .topbar .breadcrumb span { color: #bbb; }
+  .topbar .breadcrumb .current { color: #222; font-weight: 500; }
+  .content-area { flex: 1; overflow-y: auto; padding: 24px 32px 60px; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ─── Common ─── */
+  .page-title { font-size: 18px; font-weight: 700; color: #111; margin-bottom: 8px; }
+  .page-info { background: #eef3ff; border: 1px solid #d0dbf0; border-radius: 6px; padding: 10px 14px; font-size: 12.5px; color: #3366aa; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+  .page-info a { color: #2255aa; text-decoration: underline; cursor: pointer; font-weight: 500; }
+  .toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .search-input { padding: 7px 12px; border: 1px solid #d0d0d8; border-radius: 5px; font-size: 12.5px; width: 220px; outline: none; font-family: inherit; }
+  .search-input:focus { border-color: #4a7cff; box-shadow: 0 0 0 2px rgba(74,124,255,0.12); }
+  .toolbar .count { font-size: 12.5px; color: #888; margin-left: auto; }
+
+  .btn { padding: 7px 16px; border-radius: 5px; font-size: 12.5px; font-weight: 500; cursor: pointer; border: 1px solid transparent; font-family: inherit; transition: all 0.15s; }
+  .btn-primary { background: #4a7cff; color: #fff; }
+  .btn-primary:hover { background: #3a6aee; }
+  .btn-primary:disabled { background: #b0c4ff; cursor: not-allowed; }
+  .btn-secondary { background: #fff; color: #444; border-color: #d0d0d8; }
+  .btn-secondary:hover { background: #f8f8fa; }
+  .btn-danger { background: #fff; color: #d44; border-color: #e8a0a0; }
+  .btn-danger:hover { background: #fff5f5; }
+  .btn-text { background: none; border: none; color: #666; padding: 4px 8px; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .btn-text:hover { color: #222; background: #f0f0f4; border-radius: 4px; }
+  .btn-text.danger { color: #c44; }
+  .btn-text.danger:hover { color: #a22; background: #fff0f0; }
+  .btn-sm { padding: 4px 10px; font-size: 11.5px; }
+
+  /* ─── Cards ─── */
+  .card-list { display: flex; flex-direction: column; gap: 10px; }
+  .group-card { background: #fff; border: 1px solid #e2e2e8; border-radius: 8px; padding: 16px 20px; cursor: pointer; transition: all 0.15s; position: relative; display: flex; align-items: center; justify-content: space-between; }
+  .group-card:hover { border-color: #b0b8cc; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .group-card.readonly { border-color: #e2e2e8; }
+  .group-card.readonly:hover { box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+
+  .card-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+  .card-info { flex: 1; min-width: 0; }
+
+  .card-name-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; flex-wrap: wrap; }
+  .card-name { font-size: 14px; font-weight: 600; color: #111; }
+  .badge-default { font-size: 10px; background: #f0a020; color: #fff; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
+  .lock-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10.5px; color: #999; background: #f4f4f6; border-radius: 3px; padding: 2px 7px; font-weight: 500; }
+
+  .flag-icon { font-size: 15px; cursor: pointer; opacity: 0.2; transition: all 0.2s; flex-shrink: 0; }
+  .flag-icon:hover { opacity: 0.5; }
+  .flag-icon.active { opacity: 1; }
+  .flag-icon.no-interact { cursor: default; }
+  .flag-icon.no-interact:hover { opacity: 0.2; }
+  .flag-icon.active.no-interact:hover { opacity: 1; }
+
+  .card-meta { font-size: 12px; color: #888; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .card-meta .dot { color: #d0d0d0; }
+
+  .card-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .policy-count { font-size: 11.5px; color: #888; background: #f8f8fa; padding: 4px 10px; border-radius: 5px; white-space: nowrap; position: relative; cursor: default; }
+  .policy-count:hover .tooltip { display: block; }
+  .tooltip { display: none; position: absolute; top: calc(100% + 6px); right: 0; z-index: 10; background: #333; color: #fff; font-size: 11px; padding: 8px 12px; border-radius: 6px; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,.15); }
+  .tooltip::before { content: ''; position: absolute; bottom: 100%; right: 12px; border: 5px solid transparent; border-bottom-color: #333; }
+
+  .more-btn { width: 28px; height: 28px; border: none; background: none; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 16px; }
+  .more-btn:hover { background: #f3f4f6; color: #555; }
+  .dropdown { display: none; position: absolute; top: calc(100% - 4px); right: 16px; z-index: 20; background: #fff; border: 1px solid #e2e2e8; border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); min-width: 140px; padding: 4px; }
+  .dropdown.show { display: block; }
+  .dropdown-item { display: block; width: 100%; padding: 7px 12px; border: none; background: none; text-align: left; font-size: 12.5px; cursor: pointer; border-radius: 4px; font-family: inherit; color: #333; }
+  .dropdown-item:hover { background: #f3f4f6; }
+  .dropdown-item.danger { color: #d44; }
+  .dropdown-item.danger:hover { background: #fff5f5; }
+
+  /* ─── Detail ─── */
+  .detail-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .detail-header .back-btn { font-size: 12.5px; color: #666; cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 4px 0; background: none; border: none; font-family: inherit; }
+  .detail-header .back-btn:hover { color: #222; }
+  .detail-header .group-name-edit { font-size: 18px; font-weight: 700; color: #111; border: none; outline: none; background: transparent; padding: 2px 4px; border-radius: 4px; font-family: inherit; }
+  .detail-header .group-name-edit:hover:not([readonly]) { background: #f5f5f8; }
+  .detail-header .group-name-edit:focus:not([readonly]) { background: #fff; box-shadow: 0 0 0 2px rgba(74,124,255,0.2); }
+  .detail-header .group-name-edit[readonly] { cursor: default; }
+
+  .readonly-banner { background: #f8f4ee; border: 1px solid #e8d8c0; border-radius: 6px; padding: 10px 14px; font-size: 12.5px; color: #9a7830; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+  /* ─── Block overlay ─── */
+  .block-wrapper { position: relative; }
+  .block-overlay { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.6); z-index: 10; cursor: not-allowed; border-radius: 6px; }
+  .block-overlay.show { display: block; }
+
+  /* ─── Detail sections ─── */
+  .detail-section { background: #fff; border: 1px solid #e2e2e8; border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+  .detail-section-title { font-size: 14px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; color: #111; }
+  .info-icon { width: 16px; height: 16px; border-radius: 50%; background: #e5e7eb; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; color: #888; cursor: help; }
+
+  .ext-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .ext-toolbar-right { display: flex; align-items: center; gap: 8px; }
+
+  .ext-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .ext-item { display: flex; align-items: center; gap: 8px; padding: 9px 12px; background: #f9fafb; border: 1px solid #e8e8ec; border-radius: 6px; font-size: 12.5px; transition: all .15s; }
+  .ext-item:hover { border-color: #c0c8dd; }
+  .ext-item input[type=&quot;checkbox&quot;] { width: 15px; height: 15px; accent-color: #4a7cff; cursor: pointer; flex-shrink: 0; }
+  .ext-item label { cursor: pointer; user-select: none; font-family: 'SF Mono','Consolas',monospace; font-size: 12px; color: #333; }
+  .ext-item.readonly { opacity: .55; }
+  .ext-item.readonly input { cursor: not-allowed; }
+  .ext-item.readonly label { cursor: default; }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: #aaa; font-size: 13px; }
+
+  .uncontrolled-box { background: #f9fafb; border: 1px solid #e8e8ec; border-radius: 6px; padding: 16px 20px; }
+  .uncontrolled-title { font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #333; }
+  .uncontrolled-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .select-box { padding: 7px 12px; border: 1px solid #d0d0d8; border-radius: 5px; font-size: 13px; background: #fff; font-family: inherit; cursor: pointer; min-width: 100px; outline: none; }
+  .select-box:focus { border-color: #4a7cff; }
+  .select-box:disabled { background: #f4f4f6; cursor: not-allowed; opacity: .6; }
+  .uncontrolled-desc { font-size: 12px; color: #888; line-height: 1.7; }
+  .uncontrolled-desc li { margin-left: 14px; margin-bottom: 2px; }
+
+  /* ─── Modals ─── */
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.35); z-index: 1000; justify-content: center; align-items: center; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: #fff; border-radius: 10px; width: 480px; max-height: 85vh; overflow-y: auto; box-shadow: 0 12px 40px rgba(0,0,0,0.15); }
+  .modal-header { padding: 18px 20px 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f0f0f4; }
+  .modal-header h3 { font-size: 15px; font-weight: 700; color: #111; }
+  .modal-close { font-size: 20px; color: #999; cursor: pointer; background: none; border: none; line-height: 1; }
+  .modal-close:hover { color: #444; }
+  .modal-body { padding: 20px; }
+  .modal-footer { padding: 14px 20px; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid #f0f0f4; }
+
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 12.5px; font-weight: 600; color: #333; margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
+  .form-label .required { color: #e04040; }
+  .form-input { width: 100%; padding: 8px 12px; border: 1px solid #d0d0d8; border-radius: 5px; font-size: 13px; outline: none; font-family: inherit; }
+  .form-input:focus { border-color: #4a7cff; box-shadow: 0 0 0 2px rgba(74,124,255,0.12); }
+  .form-help { font-size: 11.5px; color: #999; margin-top: 4px; }
+  .form-error { font-size: 11.5px; color: #e04040; margin-top: 4px; display: none; }
+
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: #f9fafb; border: 1px solid #e8e8ec; border-radius: 6px; }
+  .toggle-row-left { display: flex; flex-direction: column; gap: 2px; }
+  .toggle-row-title { font-size: 13px; font-weight: 600; color: #333; }
+  .toggle-row-desc { font-size: 11.5px; color: #888; }
+  .toggle-switch { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .toggle-slider { position: absolute; inset: 0; cursor: pointer; border-radius: 22px; background: #d0d0d8; transition: all .2s; }
+  .toggle-slider::before { content: ''; position: absolute; left: 3px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: all .2s; box-shadow: 0 1px 2px rgba(0,0,0,.15); }
+  .toggle-switch input:checked + .toggle-slider { background: #4a7cff; }
+  .toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
+  .toggle-hint { margin-top: 8px; padding: 10px 14px; background: #eef3ff; border: 1px solid #d0dbf0; border-radius: 6px; font-size: 12px; color: #3366aa; display: flex; align-items: center; gap: 6px; }
+  .toggle-hint.hidden { display: none; }
+
+  .alert-modal { width: 380px; padding: 24px; text-align: center; }
+  .alert-modal h4 { font-size: 15px; font-weight: 700; margin-bottom: 10px; color: #111; }
+  .alert-modal p { font-size: 13px; color: #666; line-height: 1.6; margin-bottom: 20px; white-space: pre-line; }
+
+  .delete-confirm-info { background: #f8f8fa; border: 1px solid #e8e8ec; border-radius: 6px; padding: 10px 14px; margin: 12px 0; text-align: left; }
+  .delete-confirm-info .label { font-size: 11px; color: #888; margin-bottom: 6px; font-weight: 600; }
+  .policy-list { max-height: 120px; overflow-y: auto; margin: 8px 0; text-align: left; }
+  .policy-list .policy-item { display: flex; align-items: center; gap: 6px; padding: 5px 0; font-size: 12.5px; color: #333; }
+  .policy-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: #333; color: #fff; padding: 10px 24px; border-radius: 8px; font-size: 13px; opacity: 0; transition: all 0.3s; z-index: 2000; white-space: nowrap; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .proto-badge { position: fixed; top: 8px; right: 12px; background: #ff6b35; color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; z-index: 9999; letter-spacing: 0.05em; }
+
+  .role-switcher { position: fixed; top: 56px; right: 16px; background: #1e2532; border: 1px solid #333; border-radius: 8px; padding: 8px 14px; display: flex; align-items: center; box-shadow: 0 4px 16px rgba(0,0,0,0.1); z-index: 999; font-size: 12px; }
+  .role-switcher .role-label { font-weight: 600; margin-bottom: 0; margin-right: 8px; color: #ccc; font-size: 11px; }
+  .role-switcher .role-btns { display: flex; gap: 4px; }
+  .role-btn { padding: 5px 10px; border-radius: 4px; border: 1px solid #555; background: #2a3040; color: #bbb; cursor: pointer; font-size: 11.5px; font-family: inherit; font-weight: 500; transition: all 0.15s; }
+  .role-btn.active { background: #4a7cff; color: #fff; border-color: #4a7cff; }
+
+  @media (max-width: 1100px) { .ext-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 800px) { .ext-grid { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+
+<div class=&quot;proto-badge&quot;>PROTOTYPE v1.0</div>
+
+<div class=&quot;role-switcher&quot;>
+  <div class=&quot;role-label&quot;>관리자 역할 전환</div>
+  <div class=&quot;role-btns&quot;>
+    <button class=&quot;role-btn active&quot; onclick=&quot;switchRole('admin')&quot;>전체 관리자</button>
+    <button class=&quot;role-btn&quot; onclick=&quot;switchRole('dept')&quot;>부서관리자</button>
+  </div>
+</div>
+
+<div class=&quot;app-shell&quot;>
+  <div class=&quot;sidebar&quot;>
+    <div class=&quot;sidebar-title&quot;>공통 정책센터 <span class=&quot;close-btn&quot;>×</span></div>
+    <div class=&quot;sidebar-section&quot;><div class=&quot;sidebar-section-label&quot;>공통</div><div class=&quot;sidebar-item&quot;>민감정보 패턴 관리 그룹</div><div class=&quot;sidebar-item&quot;>사외 정책 IP 관리</div></div>
+    <div class=&quot;sidebar-section&quot;><div class=&quot;sidebar-section-label&quot;>정보유출방지</div><div class=&quot;sidebar-item&quot;>개별 매체 관리</div><div class=&quot;sidebar-item active&quot;>파일첨부 확장자 관리 그룹</div><div class=&quot;sidebar-item&quot;>워터마크 관리</div><div class=&quot;sidebar-item&quot;>에이전트 정책 표시 설정</div></div>
+    <div class=&quot;sidebar-section&quot;><div class=&quot;sidebar-section-label&quot;>민감정보 보호</div><div class=&quot;sidebar-item&quot;>문서 분류 관리</div><div class=&quot;sidebar-item&quot;>예외 관리 그룹</div></div>
+    <div class=&quot;sidebar-section&quot;><div class=&quot;sidebar-section-label&quot;>취약점 점검</div><div class=&quot;sidebar-item&quot;>점검 항목 관리 그룹</div><div class=&quot;sidebar-item&quot;>보안등급 설정</div></div>
+    <div class=&quot;sidebar-section&quot;><div class=&quot;sidebar-section-label&quot;>업무환경관리</div><div class=&quot;sidebar-item&quot;>실행 제어 소프트웨어 관리</div><div class=&quot;sidebar-item&quot;>소프트웨어 자산 관리 그룹</div></div>
+    <div class=&quot;sidebar-section&quot;><div class=&quot;sidebar-section-label&quot;>백업</div><div class=&quot;sidebar-item&quot;>백업 저장소 관리</div><div class=&quot;sidebar-item&quot;>백업 알림 수신 관리</div></div>
+  </div>
+
+  <div class=&quot;main-area&quot;>
+    <div class=&quot;topbar&quot;><div class=&quot;breadcrumb&quot;>서비스 <span>›</span> 정책 <span>›</span> 공통 정책센터 <span>›</span> <span class=&quot;current&quot; id=&quot;breadcrumb-current&quot;>파일첨부 확장자 관리 그룹</span></div></div>
+    <div class=&quot;content-area&quot;>
+
+      <!-- ═══ Group List ═══ -->
+      <div class=&quot;page active&quot; id=&quot;page-list&quot;>
+        <h1 class=&quot;page-title&quot;>파일첨부 확장자 관리 그룹</h1>
+        <div class=&quot;page-info&quot;>ℹ️ 제어 확장자와 미제어 확장자 차단 기준을 그룹별로 관리합니다. 정책 세트에서 그룹을 선택하여 적용할 수 있습니다. <a>더 알아보기</a></div>
+        <div class=&quot;toolbar&quot;>
+          <input class=&quot;search-input&quot; placeholder=&quot;그룹명 검색&quot; id=&quot;groupSearch&quot; oninput=&quot;filterCards()&quot;>
+          <span class=&quot;count&quot; id=&quot;groupCount&quot;>총 3개</span>
+          <button class=&quot;btn btn-primary&quot; onclick=&quot;openModal('createGroupModal')&quot;>추가하기</button>
+        </div>
+        <div class=&quot;card-list&quot; id=&quot;cardList&quot;></div>
+      </div>
+
+      <!-- ═══ Group Detail ═══ -->
+      <div class=&quot;page&quot; id=&quot;page-detail&quot;>
+        <div class=&quot;detail-header&quot;>
+          <button class=&quot;back-btn&quot; onclick=&quot;goToList()&quot;>← 목록</button>
+          <input class=&quot;group-name-edit&quot; id=&quot;detailGroupName&quot; value=&quot;&quot; maxlength=&quot;30&quot; onblur=&quot;saveGroupName()&quot;>
+          <span id=&quot;detailDefaultBadge&quot; class=&quot;badge-default&quot; style=&quot;display:none;&quot;>대표</span>
+          <span id=&quot;detailLockBadge&quot; class=&quot;lock-badge&quot; style=&quot;display:none;&quot;>🔒 읽기 전용</span>
+        </div>
+
+        <div class=&quot;readonly-banner&quot; id=&quot;readonlyBanner&quot; style=&quot;display:none;&quot;>
+          🔒 이 그룹은 다른 관리자가 생성한 그룹입니다. 수정이 필요한 경우 복사하여 새로운 그룹을 생성해주세요.
+        </div>
+
+        <!-- 제어 확장자 영역 -->
+        <div class=&quot;block-wrapper&quot;>
+          <div class=&quot;block-overlay&quot; id=&quot;extBlockOverlay&quot;></div>
+          <div class=&quot;detail-section&quot;>
+            <div class=&quot;detail-section-title&quot;>제어 확장자 <span class=&quot;info-icon&quot; title=&quot;파일첨부 차단·허용 정책의 대상이 되는 파일 확장자입니다.&quot;>?</span></div>
+            <div class=&quot;ext-toolbar&quot;>
+              <input class=&quot;search-input&quot; placeholder=&quot;확장자 검색&quot; style=&quot;width:200px;&quot; id=&quot;extSearch&quot; oninput=&quot;filterExts()&quot;>
+              <div class=&quot;ext-toolbar-right&quot;>
+                <span class=&quot;count&quot; id=&quot;extCount&quot;>총 71개</span>
+                <button class=&quot;btn btn-sm btn-secondary&quot; id=&quot;btnAddExt&quot; onclick=&quot;openModal('addExtModal')&quot;>추가하기</button>
+                <button class=&quot;btn btn-sm btn-danger&quot; id=&quot;btnDelExt&quot; onclick=&quot;deleteSelectedExts()&quot;>삭제하기</button>
+              </div>
+            </div>
+            <div class=&quot;ext-grid&quot; id=&quot;extGrid&quot;></div>
+          </div>
+        </div>
+
+        <!-- 미제어 확장자 영역 -->
+        <div class=&quot;block-wrapper&quot;>
+          <div class=&quot;block-overlay&quot; id=&quot;sizeBlockOverlay&quot;></div>
+          <div class=&quot;detail-section&quot;>
+            <div class=&quot;uncontrolled-box&quot;>
+              <div class=&quot;uncontrolled-title&quot;>제어 확장자 리스트에 없는 모든 확장자</div>
+              <div class=&quot;uncontrolled-row&quot;>
+                <select class=&quot;select-box&quot; id=&quot;sizeSelect&quot; onchange=&quot;changeSizeLimit()&quot;>
+                  <option value=&quot;1KB&quot;>1KB</option><option value=&quot;10KB&quot;>10KB</option><option value=&quot;100KB&quot;>100KB</option><option value=&quot;1MB&quot;>1MB</option><option value=&quot;5MB&quot;>5MB</option><option value=&quot;10MB&quot;>10MB</option><option value=&quot;30MB&quot;>30MB</option><option value=&quot;50MB&quot;>50MB</option><option value=&quot;100MB&quot;>100MB</option><option value=&quot;300MB&quot;>300MB</option><option value=&quot;500MB&quot;>500MB</option><option value=&quot;1GB&quot;>1GB</option>
+                </select>
+                <span style=&quot;font-size:13px; color:#333;&quot;>이하 파일첨부 허용</span>
+              </div>
+              <div class=&quot;uncontrolled-desc&quot;><ul>
+                <li>제어 확장자가 아닌 확장자는 파일 사이즈에 따른 일괄 차단 정책이 동작합니다.</li>
+                <li>명확한 제어가 필요한 확장자는 확장자 리스트에 등록하여 정책을 설정해주세요.</li>
+                <li>프로그램 동작에 필요한 파일이 차단되지 않도록 권장하는 사이즈 설정은 100KB 이상입니다.</li>
+              </ul></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Modals ═══ -->
+
+<!-- 그룹 생성 -->
+<div class=&quot;modal-overlay&quot; id=&quot;createGroupModal&quot;>
+  <div class=&quot;modal&quot;>
+    <div class=&quot;modal-header&quot;><h3>파일첨부 확장자 관리 그룹 생성</h3><button class=&quot;modal-close&quot; onclick=&quot;closeModal('createGroupModal')&quot;>×</button></div>
+    <div class=&quot;modal-body&quot;>
+      <div class=&quot;form-group&quot;>
+        <div class=&quot;form-label&quot;>관리 그룹명 <span class=&quot;required&quot;>*</span></div>
+        <input class=&quot;form-input&quot; id=&quot;newGroupName&quot; maxlength=&quot;30&quot; placeholder=&quot;그룹명을 입력하세요.&quot;>
+        <div class=&quot;form-help&quot;>최대 30자</div>
+        <div class=&quot;form-error&quot; id=&quot;createNameError&quot;>이미 등록된 그룹명입니다.</div>
+      </div>
+      <div class=&quot;form-group&quot;>
+        <div class=&quot;form-label&quot;>기본 제공 확장자</div>
+        <div class=&quot;toggle-row&quot;>
+          <div class=&quot;toggle-row-left&quot;>
+            <span class=&quot;toggle-row-title&quot;>기본 제어 확장자 적용</span>
+            <span class=&quot;toggle-row-desc&quot;>7z, alz, cell, doc, docx, dwg, hwp 등 71개 확장자</span>
+          </div>
+          <label class=&quot;toggle-switch&quot;>
+            <input type=&quot;checkbox&quot; checked id=&quot;toggleDefaultExt&quot; onchange=&quot;updateToggleHint()&quot;>
+            <span class=&quot;toggle-slider&quot;></span>
+          </label>
+        </div>
+        <div class=&quot;toggle-hint&quot; id=&quot;toggleHint&quot;>
+          ✅ 기본 제공 확장자 71개가 그룹에 포함됩니다. 생성 후 상세에서 개별 추가·삭제할 수 있습니다.
+        </div>
+      </div>
+      <div class=&quot;form-group&quot;>
+        <div class=&quot;form-label&quot;>미제어 확장자 파일 크기 차단 기준</div>
+        <div style=&quot;display:flex;align-items:center;gap:8px;&quot;>
+          <select class=&quot;select-box&quot; id=&quot;createSizeSelect&quot;>
+            <option>1KB</option><option>10KB</option><option selected>100KB</option><option>1MB</option><option>5MB</option><option>10MB</option><option>30MB</option><option>50MB</option><option>100MB</option><option>300MB</option><option>500MB</option><option>1GB</option>
+          </select>
+          <span style=&quot;font-size:13px;color:#333;&quot;>이하 파일첨부 허용</span>
+        </div>
+        <div class=&quot;form-help&quot;>제어 확장자 리스트에 없는 확장자의 차단 기준입니다.</div>
+      </div>
+    </div>
+    <div class=&quot;modal-footer&quot;>
+      <button class=&quot;btn btn-secondary&quot; onclick=&quot;closeModal('createGroupModal')&quot;>취소</button>
+      <button class=&quot;btn btn-primary&quot; onclick=&quot;createGroup()&quot;>생성하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 확장자 추가 -->
+<div class=&quot;modal-overlay&quot; id=&quot;addExtModal&quot;>
+  <div class=&quot;modal&quot;>
+    <div class=&quot;modal-header&quot;><h3>제어 확장자 추가</h3><button class=&quot;modal-close&quot; onclick=&quot;closeModal('addExtModal')&quot;>×</button></div>
+    <div class=&quot;modal-body&quot;>
+      <div class=&quot;form-group&quot;>
+        <div class=&quot;form-label&quot;>확장자 입력</div>
+        <input class=&quot;form-input&quot; id=&quot;newExtInput&quot; placeholder=&quot;확장자를 입력하세요. (쉼표로 구분, 최대 10개)&quot;>
+        <div class=&quot;form-help&quot;>예: pdf, xlsx, pptx</div>
+        <div class=&quot;form-error&quot; id=&quot;extDupError&quot;>이미 등록된 확장자입니다.</div>
+      </div>
+    </div>
+    <div class=&quot;modal-footer&quot;>
+      <button class=&quot;btn btn-secondary&quot; onclick=&quot;closeModal('addExtModal')&quot;>취소</button>
+      <button class=&quot;btn btn-primary&quot; onclick=&quot;addExtensions()&quot;>추가하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 확장자 삭제 확인 -->
+<div class=&quot;modal-overlay&quot; id=&quot;confirmDeleteExt&quot;>
+  <div class=&quot;modal&quot; style=&quot;width:420px;&quot;>
+    <div class=&quot;modal-body&quot; style=&quot;padding:24px;&quot;>
+      <h4 style=&quot;font-size:15px;font-weight:700;margin-bottom:10px;&quot;>선택하신 항목을 파일첨부 제어 확장자에서 제거하시겠습니까?</h4>
+      <p style=&quot;font-size:13px;color:#666;line-height:1.6;&quot;>해당 그룹을 적용 중인 정책에 동일하게 적용되며, 삭제하려는 확장자가 허용 확장자 설정에 등록된 경우 함께 제거됩니다.</p>
+    </div>
+    <div class=&quot;modal-footer&quot;>
+      <button class=&quot;btn btn-secondary&quot; onclick=&quot;closeModal('confirmDeleteExt')&quot;>취소</button>
+      <button class=&quot;btn btn-primary&quot; onclick=&quot;confirmDeleteExts()&quot;>확인</button>
+    </div>
+  </div>
+</div>
+
+<!-- 그룹 삭제 확인 (정책 적용 중) -->
+<div class=&quot;modal-overlay&quot; id=&quot;deleteGroupModal&quot;>
+  <div class=&quot;modal&quot; style=&quot;width:420px;&quot;>
+    <div class=&quot;modal-body&quot; style=&quot;padding:24px;&quot;>
+      <h4 style=&quot;font-size:15px;font-weight:700;margin-bottom:10px;&quot;>이 파일첨부 확장자 그룹을 삭제하시겠습니까?</h4>
+      <p style=&quot;font-size:13px;color:#666;line-height:1.6;&quot;>삭제 시 적용 중인 정책에서 '대표 그룹'으로 자동 변경됩니다.</p>
+      <div class=&quot;delete-confirm-info&quot; id=&quot;deleteGroupInfo&quot;></div>
+    </div>
+    <div class=&quot;modal-footer&quot;>
+      <button class=&quot;btn btn-secondary&quot; onclick=&quot;closeModal('deleteGroupModal')&quot;>취소</button>
+      <button class=&quot;btn btn-primary&quot; onclick=&quot;confirmDeleteGroup()&quot;>삭제하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 삭제 불가 Alert -->
+<div class=&quot;modal-overlay&quot; id=&quot;alertModal&quot;>
+  <div class=&quot;modal alert-modal&quot;>
+    <h4 id=&quot;alertTitle&quot;></h4>
+    <p id=&quot;alertMsg&quot;></p>
+    <button class=&quot;btn btn-primary&quot; onclick=&quot;closeModal('alertModal')&quot;>확인</button>
+  </div>
+</div>
+
+<!-- 대표 변경 확인 -->
+<div class=&quot;modal-overlay&quot; id=&quot;confirmDefaultModal&quot;>
+  <div class=&quot;modal&quot; style=&quot;width:420px;&quot;>
+    <div class=&quot;modal-body&quot; style=&quot;padding:24px;&quot;>
+      <h4 style=&quot;font-size:15px;font-weight:700;margin-bottom:10px;&quot; id=&quot;confirmDefaultText&quot;></h4>
+      <p style=&quot;font-size:13px;color:#666;line-height:1.6;&quot;>그룹이 지정되지 않은 정책 세트에 자동 적용됩니다.</p>
+    </div>
+    <div class=&quot;modal-footer&quot;>
+      <button class=&quot;btn btn-secondary&quot; onclick=&quot;closeModal('confirmDefaultModal')&quot;>취소</button>
+      <button class=&quot;btn btn-primary&quot; onclick=&quot;confirmSetDefault()&quot;>확인</button>
+    </div>
+  </div>
+</div>
+
+<div class=&quot;toast&quot; id=&quot;toast&quot;></div>
+
+<script>
+// ─── State ───
+let currentRole = 'admin'; // 'admin' | 'dept'
+let currentGroupIdx = null;
+let pendingDefaultIdx = null;
+let pendingDeleteIdx = null;
+
+const DEFAULT_EXTS = ['7z','alz','bz','bz2','cell','chm','doc','docx','dwg','egg','eml','gz','hml','html','hwd','hwn','hwp','hwpx','hwt','img','iso','jar','jpg','jpeg','json','key','lzh','mdb','mht','numbers','ods','odt','pages','pdf','pem','png','pot','pps','ppsx','ppt','pptx','psd','rar','rtf','show','svg','tar','tgz','tif','tiff','txt','war','xls','xlsb','xlsm','xlsx','xml','xps','zip','123','ai','cab','dqy','gul','hcl','iqy','jnt','mpp','oqy','rqy','sldx','vsd','wps'];
+
+let groups = [
+  { name: '기본 제어 확장자', isDefault: true, owner: 'me', ownerName: '나(전체관리자)', sizeLimit: '100KB', exts: [...DEFAULT_EXTS].sort(), policyCount: 9, modDate: '2026.03.15', policies: ['전사 공통 정책','개발팀 정책','디자인팀 정책','마케팅팀 정책','인사팀 정책','외 4개'] },
+  { name: '개발팀 확장자', isDefault: false, owner: 'me', ownerName: '나(전체관리자)', sizeLimit: '1MB', exts: DEFAULT_EXTS.slice(0,45).sort(), policyCount: 2, modDate: '2026.03.10', policies: ['개발1팀 정책','개발2팀 정책'] },
+  { name: '마케팅팀 확장자', isDefault: false, owner: 'other', ownerName: '김마케팅(부서관리자)', sizeLimit: '10MB', exts: DEFAULT_EXTS.slice(0,30).sort(), policyCount: 0, modDate: '2026.03.08', policies: [] },
+];
+
+// ─── Role Switch ───
+function switchRole(role) {
+  currentRole = role;
+  document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  if (document.getElementById('page-detail').classList.contains('active')) {
+    goDetail(currentGroupIdx);
+  } else {
+    renderCards();
+  }
+}
+
+// ─── List ───
+function renderCards() {
+  const q = (document.getElementById('groupSearch')?.value || '').toLowerCase();
+  const filtered = groups.map((g, i) => ({ ...g, _idx: i })).filter(g => g.name.toLowerCase().includes(q));
+  document.getElementById('groupCount').textContent = `총 ${filtered.length}개`;
+
+  document.getElementById('cardList').innerHTML = filtered.map(g => {
+    const i = g._idx;
+    const isReadonly = currentRole === 'dept' &amp;&amp; g.owner === 'other';
+    const isDeptOwn = currentRole === 'dept' &amp;&amp; g.owner === 'me';
+
+    let nameIcons = '';
+    if (g.isDefault) nameIcons += `<span class=&quot;badge-default&quot;>대표</span>`;
+    if (isReadonly) nameIcons += `<span class=&quot;lock-badge&quot;>🔒 읽기 전용</span>`;
+
+    let flagClass = 'flag-icon';
+    if (g.isDefault) flagClass += ' active';
+    if (currentRole === 'dept') flagClass += ' no-interact';
+    let flagClick = '';
+    if (currentRole === 'admin' &amp;&amp; !g.isDefault) flagClick = `onclick=&quot;event.stopPropagation(); trySetDefault(${i})&quot;`;
+    else if (currentRole === 'admin' &amp;&amp; g.isDefault) flagClick = '';
+
+    let meta = [`제어 확장자 ${g.exts.length}개`, `미제어 차단 ${g.sizeLimit}`];
+    if (isReadonly) meta.push(`생성자: ${g.ownerName}`);
+    meta.push(`수정 일시 ${g.modDate}`);
+
+    let policyHtml = g.policyCount > 0
+      ? `<div class=&quot;policy-count&quot;>${g.policyCount}개 정책 적용 중<div class=&quot;tooltip&quot;>${g.policies.join('<br>')}</div></div>`
+      : `<div class=&quot;policy-count&quot; style=&quot;color:#bbb;&quot;>0개 정책 적용 중</div>`;
+
+    // 더보기 메뉴
+    let ddItems = `<button class=&quot;dropdown-item&quot; onclick=&quot;event.stopPropagation(); copyGroup(${i})&quot;>복사하기</button>`;
+    const canDelete = (currentRole === 'admin') || (currentRole === 'dept' &amp;&amp; g.owner === 'me');
+    if (canDelete &amp;&amp; !g.isDefault) {
+      ddItems += `<button class=&quot;dropdown-item danger&quot; onclick=&quot;event.stopPropagation(); tryDeleteGroup(${i})&quot;>삭제하기</button>`;
+    }
+
+    return `
+    <div class=&quot;group-card${isReadonly ? ' readonly' : ''}&quot; onclick=&quot;goDetail(${i})&quot;>
+      <div class=&quot;card-left&quot;>
+        <span class=&quot;${flagClass}&quot; ${flagClick} title=&quot;${g.isDefault ? '대표 그룹' : (currentRole==='admin' ? '대표 그룹으로 설정' : '')}&quot;>🚩</span>
+        <div class=&quot;card-info&quot;>
+          <div class=&quot;card-name-row&quot;>
+            <span class=&quot;card-name&quot;>${g.name}</span>
+            ${nameIcons}
+          </div>
+          <div class=&quot;card-meta&quot;>${meta.map(m => `<span>${m}</span>`).join('<span class=&quot;dot&quot;>·</span>')}</div>
+        </div>
+      </div>
+      <div class=&quot;card-right&quot;>
+        ${policyHtml}
+        <button class=&quot;more-btn&quot; onclick=&quot;event.stopPropagation(); toggleDropdown('dd-${i}')&quot;>⋯</button>
+        <div class=&quot;dropdown&quot; id=&quot;dd-${i}&quot;>${ddItems}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterCards() { renderCards(); }
+
+// ─── Detail ───
+function goToList() {
+  document.getElementById('page-list').classList.add('active');
+  document.getElementById('page-detail').classList.remove('active');
+  document.getElementById('breadcrumb-current').textContent = '파일첨부 확장자 관리 그룹';
+  renderCards();
+}
+
+function goDetail(idx) {
+  currentGroupIdx = idx;
+  const g = groups[idx];
+  const isReadonly = currentRole === 'dept' &amp;&amp; g.owner === 'other';
+
+  document.getElementById('page-list').classList.remove('active');
+  document.getElementById('page-detail').classList.add('active');
+  document.getElementById('breadcrumb-current').textContent = g.name;
+
+  // Header
+  const nameInput = document.getElementById('detailGroupName');
+  nameInput.value = g.name;
+  nameInput.readOnly = isReadonly;
+
+  document.getElementById('detailDefaultBadge').style.display = g.isDefault ? '' : 'none';
+  document.getElementById('detailLockBadge').style.display = isReadonly ? '' : 'none';
+  document.getElementById('readonlyBanner').style.display = isReadonly ? 'flex' : 'none';
+
+  // Buttons
+  document.getElementById('btnAddExt').style.display = isReadonly ? 'none' : '';
+  document.getElementById('btnDelExt').style.display = isReadonly ? 'none' : '';
+
+  // Size select
+  document.getElementById('sizeSelect').value = g.sizeLimit;
+  document.getElementById('sizeSelect').disabled = isReadonly;
+
+  // Block overlays
+  document.getElementById('extBlockOverlay').classList.toggle('show', isReadonly);
+  document.getElementById('sizeBlockOverlay').classList.toggle('show', isReadonly);
+
+  renderExts();
+}
+
+function renderExts() {
+  const g = groups[currentGroupIdx];
+  const isReadonly = currentRole === 'dept' &amp;&amp; g.owner === 'other';
+  const q = (document.getElementById('extSearch')?.value || '').toLowerCase();
+  const filtered = g.exts.filter(e => e.includes(q));
+
+  document.getElementById('extCount').textContent = `총 ${filtered.length}개`;
+
+  if (filtered.length === 0) {
+    document.getElementById('extGrid').innerHTML = `<div class=&quot;empty-state&quot; style=&quot;grid-column:1/-1;&quot;>등록된 제어 확장자가 없습니다.</div>`;
+    return;
+  }
+
+  document.getElementById('extGrid').innerHTML = filtered.map((e, i) =>
+    `<div class=&quot;ext-item${isReadonly ? ' readonly' : ''}&quot;>
+      <input type=&quot;checkbox&quot; id=&quot;ext-${i}&quot; ${isReadonly ? 'disabled' : ''}>
+      <label for=&quot;ext-${i}&quot;>${e}</label>
+    </div>`
+  ).join('');
+}
+
+function filterExts() { renderExts(); }
+
+function saveGroupName() {
+  const g = groups[currentGroupIdx];
+  const newName = document.getElementById('detailGroupName').value.trim();
+  if (newName &amp;&amp; newName !== g.name) {
+    g.name = newName;
+    showToast('그룹명이 변경되었습니다.');
+  }
+}
+
+function changeSizeLimit() {
+  const g = groups[currentGroupIdx];
+  g.sizeLimit = document.getElementById('sizeSelect').value;
+  showToast('제어 확장자 리스트에 없는 확장자의 제어 파일 사이즈를 변경하였습니다.');
+}
+
+// ─── Group CRUD ───
+function createGroup() {
+  const name = document.getElementById('newGroupName').value.trim();
+  if (!name) { showToast('그룹명을 입력해주세요.'); return; }
+  if (groups.some(g => g.name === name)) {
+    document.getElementById('createNameError').style.display = 'block';
+    return;
+  }
+  document.getElementById('createNameError').style.display = 'none';
+  const withDefault = document.getElementById('toggleDefaultExt').checked;
+  const sizeLimit = document.getElementById('createSizeSelect').value;
+
+  groups.push({
+    name, isDefault: false,
+    owner: currentRole === 'dept' ? 'me' : 'me',
+    ownerName: currentRole === 'dept' ? '나(부서관리자)' : '나(전체관리자)',
+    sizeLimit,
+    exts: withDefault ? [...DEFAULT_EXTS].sort() : [],
+    policyCount: 0, modDate: '2026.03.19', policies: []
+  });
+
+  closeModal('createGroupModal');
+  document.getElementById('newGroupName').value = '';
+  renderCards();
+
+  const msg = withDefault
+    ? `'${name}' 관리 그룹을 생성하였습니다. (기본 확장자 ${DEFAULT_EXTS.length}개 포함)`
+    : `'${name}' 관리 그룹을 생성하였습니다. (빈 그룹)`;
+  showToast(msg);
+}
+
+function copyGroup(idx) {
+  closeAllDropdowns();
+  const src = groups[idx];
+  let copyName = `${src.name} (복사본)`;
+  if (copyName.length > 30) copyName = copyName.substring(0, 27) + '...';
+
+  groups.push({
+    name: copyName, isDefault: false,
+    owner: 'me',
+    ownerName: currentRole === 'dept' ? '나(부서관리자)' : '나(전체관리자)',
+    sizeLimit: src.sizeLimit,
+    exts: [...src.exts],
+    policyCount: 0, modDate: '2026.03.19', policies: []
+  });
+  renderCards();
+  showToast(`'${copyName}' 관리 그룹을 생성하였습니다.`);
+}
+
+function tryDeleteGroup(idx) {
+  closeAllDropdowns();
+  const g = groups[idx];
+
+  if (g.isDefault) {
+    document.getElementById('alertTitle').textContent = '삭제 불가';
+    document.getElementById('alertMsg').textContent = '대표 관리 그룹을 해제 후 삭제해주세요.';
+    openModal('alertModal');
+    return;
+  }
+  if (groups.length <= 1) {
+    document.getElementById('alertTitle').textContent = '삭제 불가';
+    document.getElementById('alertMsg').textContent = '최소 1개 이상의 그룹이 필요합니다.';
+    openModal('alertModal');
+    return;
+  }
+
+  pendingDeleteIdx = idx;
+  let info = `<div class=&quot;label&quot;>선택 그룹</div><div style=&quot;font-size:13px;font-weight:600;margin-bottom:8px;&quot;>${g.name} / 확장자 ${g.exts.length}개</div>`;
+  if (g.policyCount > 0) {
+    info += `<div class=&quot;label&quot;>적용된 정책 (${g.policyCount})</div><div class=&quot;policy-list&quot;>${g.policies.map(p => `<div class=&quot;policy-item&quot;><span class=&quot;policy-dot&quot; style=&quot;background:#4a7cff;&quot;></span>${p}</div>`).join('')}</div>`;
+  }
+  document.getElementById('deleteGroupInfo').innerHTML = info;
+  openModal('deleteGroupModal');
+}
+
+function confirmDeleteGroup() {
+  const name = groups[pendingDeleteIdx].name;
+  groups.splice(pendingDeleteIdx, 1);
+  closeModal('deleteGroupModal');
+  renderCards();
+  showToast(`'${name}' 관리 그룹을 삭제하였습니다.`);
+}
+
+function trySetDefault(idx) {
+  pendingDefaultIdx = idx;
+  document.getElementById('confirmDefaultText').textContent = `대표 그룹을 '${groups[idx].name}'(으)로 변경하시겠습니까?`;
+  openModal('confirmDefaultModal');
+}
+
+function confirmSetDefault() {
+  groups.forEach(g => g.isDefault = false);
+  groups[pendingDefaultIdx].isDefault = true;
+  closeModal('confirmDefaultModal');
+  renderCards();
+  showToast(`대표 그룹을 '${groups[pendingDefaultIdx].name}'(으)로 변경하였습니다.`);
+}
+
+// ─── Extension CRUD ───
+function addExtensions() {
+  const v = document.getElementById('newExtInput').value.trim();
+  if (!v) { showToast('확장자를 입력해주세요.'); return; }
+
+  const g = groups[currentGroupIdx];
+  const newExts = v.split(',').map(e => e.trim().toLowerCase().replace(/^\./, '')).filter(e => e).slice(0, 10);
+  const dups = newExts.filter(e => g.exts.includes(e));
+
+  if (dups.length > 0 &amp;&amp; dups.length === newExts.length) {
+    document.getElementById('extDupError').style.display = 'block';
+    return;
+  }
+  document.getElementById('extDupError').style.display = 'none';
+
+  const added = newExts.filter(e => !g.exts.includes(e));
+  g.exts = [...g.exts, ...added].sort();
+  g.modDate = '2026.03.19';
+
+  closeModal('addExtModal');
+  document.getElementById('newExtInput').value = '';
+  renderExts();
+  showToast(`'${added.join(', ')}' 항목을 파일첨부 제어 확장자로 추가하였습니다.`);
+}
+
+function deleteSelectedExts() {
+  const checked = document.querySelectorAll('#extGrid input:checked');
+  if (!checked.length) { showToast('삭제할 항목을 선택해주세요.'); return; }
+  openModal('confirmDeleteExt');
+}
+
+function confirmDeleteExts() {
+  const g = groups[currentGroupIdx];
+  const checked = document.querySelectorAll('#extGrid input:checked');
+  const toRemove = [];
+  checked.forEach(cb => {
+    const label = cb.nextElementSibling;
+    if (label) toRemove.push(label.textContent);
+  });
+  g.exts = g.exts.filter(e => !toRemove.includes(e));
+  g.modDate = '2026.03.19';
+  closeModal('confirmDeleteExt');
+  renderExts();
+  showToast(`'${toRemove.join(', ')}' 항목을 파일첨부 제어 확장자에서 삭제하였습니다.`);
+}
+
+// ─── Toggle hint ───
+function updateToggleHint() {
+  const on = document.getElementById('toggleDefaultExt').checked;
+  document.getElementById('toggleHint').classList.toggle('hidden', !on);
+}
+
+// ─── Util ───
+function toggleDropdown(id) { closeAllDropdowns(); document.getElementById(id).classList.toggle('show'); }
+function closeAllDropdowns() { document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('show')); }
+document.addEventListener('click', closeAllDropdowns);
+
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ─── Init ───
+renderCards();
+</script>
+</body>
+</html>
+"></iframe>
+    <iframe class="frame" id="frame-exception" srcdoc="<!DOCTYPE html>
+<html lang=&quot;ko-KR&quot;>
+<head>
+<meta charset=&quot;UTF-8&quot;>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;>
+<title>예외 관리 그룹 — UI 프로토타입 v1.0</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&amp;display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Noto Sans KR',-apple-system,sans-serif;color:#222;background:#f5f5f8;font-size:13px;-webkit-font-smoothing:antialiased}
+  .app-shell{display:flex;height:100vh;overflow:hidden}
+  .sidebar{width:220px;background:#1e2532;color:#b8c0cc;flex-shrink:0;overflow-y:auto;padding:16px 0}
+  .sidebar-title{font-size:13px;font-weight:600;color:#fff;padding:0 16px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+  .sidebar-title .close-btn{margin-left:auto;cursor:pointer;color:#667;font-size:16px}
+  .sidebar-section{padding:6px 0}
+  .sidebar-section-label{font-size:11px;font-weight:600;color:#667;padding:4px 16px;letter-spacing:.05em}
+  .sidebar-item{padding:7px 16px 7px 24px;font-size:12.5px;cursor:pointer;transition:background .15s}
+  .sidebar-item:hover{background:rgba(255,255,255,.06)}
+  .sidebar-item.active{background:rgba(255,255,255,.1);color:#fff;font-weight:500}
+  .main-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
+  .topbar{height:48px;background:#fff;border-bottom:1px solid #e2e2e8;display:flex;align-items:center;padding:0 24px;font-size:13px;color:#888;flex-shrink:0}
+  .topbar .breadcrumb{display:flex;align-items:center;gap:6px}
+  .topbar .breadcrumb span{color:#bbb}
+  .topbar .breadcrumb .current{color:#222;font-weight:500}
+  .content-area{flex:1;overflow-y:auto;padding:24px 32px 60px}
+  .page{display:none}.page.active{display:block}
+  .page-title{font-size:18px;font-weight:700;color:#111;margin-bottom:8px}
+  .page-info{background:#eef3ff;border:1px solid #d0dbf0;border-radius:6px;padding:10px 14px;font-size:12.5px;color:#3366aa;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+  .page-info a{color:#2255aa;text-decoration:underline;cursor:pointer;font-weight:500}
+  .toolbar{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+  .search-input{padding:7px 12px;border:1px solid #d0d0d8;border-radius:5px;font-size:12.5px;width:220px;outline:none;font-family:inherit}
+  .search-input:focus{border-color:#4a7cff;box-shadow:0 0 0 2px rgba(74,124,255,.12)}
+  .toolbar .count{font-size:12.5px;color:#888;margin-left:auto}
+  .btn{padding:7px 16px;border-radius:5px;font-size:12.5px;font-weight:500;cursor:pointer;border:1px solid transparent;font-family:inherit;transition:all .15s}
+  .btn-primary{background:#4a7cff;color:#fff}.btn-primary:hover{background:#3a6aee}
+  .btn-secondary{background:#fff;color:#444;border-color:#d0d0d8}.btn-secondary:hover{background:#f8f8fa}
+  .btn-danger{background:#fff;color:#d44;border-color:#e8a0a0}.btn-danger:hover{background:#fff5f5}
+  .btn-text{background:none;border:none;color:#666;padding:4px 8px;font-size:12px;cursor:pointer;font-family:inherit}
+  .btn-text:hover{color:#222;background:#f0f0f4;border-radius:4px}
+  .btn-sm{padding:4px 10px;font-size:11.5px}
+  .card-list{display:flex;flex-direction:column;gap:10px}
+  .group-card{background:#fff;border:1px solid #e2e2e8;border-radius:8px;padding:16px 20px;cursor:pointer;transition:all .15s;position:relative;display:flex;align-items:center;justify-content:space-between}
+  .group-card:hover{border-color:#b0b8cc;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+  .group-card.readonly:hover{box-shadow:0 1px 4px rgba(0,0,0,.04)}
+  .card-left{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+  .card-info{flex:1;min-width:0}
+  .card-name-row{display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap}
+  .card-name{font-size:14px;font-weight:600;color:#111}
+  .badge-default{font-size:10px;background:#f0a020;color:#fff;padding:1px 6px;border-radius:3px;font-weight:600}
+  .lock-badge{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;color:#999;background:#f4f4f6;border-radius:3px;padding:2px 7px;font-weight:500}
+  .flag-icon{font-size:15px;cursor:pointer;opacity:.2;transition:all .2s;flex-shrink:0}
+  .flag-icon:hover{opacity:.5}.flag-icon.active{opacity:1}
+  .flag-icon.no-interact{cursor:default}.flag-icon.no-interact:hover{opacity:.2}.flag-icon.active.no-interact:hover{opacity:1}
+  .card-meta{font-size:12px;color:#888;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .card-meta .dot{color:#d0d0d0}
+  .card-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+  .policy-count{font-size:11.5px;color:#888;background:#f8f8fa;padding:4px 10px;border-radius:5px;white-space:nowrap;position:relative;cursor:default}
+  .policy-count:hover .tooltip{display:block}
+  .tooltip{display:none;position:absolute;top:calc(100% + 6px);right:0;z-index:10;background:#333;color:#fff;font-size:11px;padding:8px 12px;border-radius:6px;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+  .tooltip::before{content:'';position:absolute;bottom:100%;right:12px;border:5px solid transparent;border-bottom-color:#333}
+  .more-btn{width:28px;height:28px;border:none;background:none;border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:16px}
+  .more-btn:hover{background:#f3f4f6;color:#555}
+  .dropdown{display:none;position:absolute;top:calc(100% - 4px);right:16px;z-index:20;background:#fff;border:1px solid #e2e2e8;border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,.1);min-width:140px;padding:4px}
+  .dropdown.show{display:block}
+  .dropdown-item{display:block;width:100%;padding:7px 12px;border:none;background:none;text-align:left;font-size:12.5px;cursor:pointer;border-radius:4px;font-family:inherit;color:#333}
+  .dropdown-item:hover{background:#f3f4f6}
+  .dropdown-item.danger{color:#d44}.dropdown-item.danger:hover{background:#fff5f5}
+  .detail-header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+  .detail-header .back-btn{font-size:12.5px;color:#666;cursor:pointer;display:flex;align-items:center;gap:4px;padding:4px 0;background:none;border:none;font-family:inherit}
+  .detail-header .back-btn:hover{color:#222}
+  .detail-header .group-name-edit{font-size:18px;font-weight:700;color:#111;border:none;outline:none;background:transparent;padding:2px 4px;border-radius:4px;font-family:inherit}
+  .detail-header .group-name-edit:hover:not([readonly]){background:#f5f5f8}
+  .detail-header .group-name-edit:focus:not([readonly]){background:#fff;box-shadow:0 0 0 2px rgba(74,124,255,.2)}
+  .detail-header .group-name-edit[readonly]{cursor:default}
+  .readonly-banner{background:#f8f4ee;border:1px solid #e8d8c0;border-radius:6px;padding:10px 14px;font-size:12.5px;color:#9a7830;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+  .block-wrapper{position:relative}.block-overlay{display:none;position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,.6);z-index:10;cursor:not-allowed;border-radius:6px}.block-overlay.show{display:block}
+  .tabs{display:flex;border-bottom:2px solid #e2e2e8;margin-bottom:20px}
+  .tab-item{padding:10px 20px;font-size:13px;font-weight:500;color:#888;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+  .tab-item:hover{color:#444}.tab-item.active{color:#4a7cff;border-bottom-color:#4a7cff;font-weight:600}
+  .data-table{width:100%;border-collapse:collapse;font-size:12.5px}
+  .data-table thead th{background:#f8f8fa;padding:9px 12px;text-align:left;font-weight:600;color:#555;border-bottom:1px solid #e2e2e8;white-space:nowrap}
+  .data-table tbody td{padding:10px 12px;border-bottom:1px solid #f0f0f4;color:#333}
+  .data-table tbody tr:hover{background:#f9f9fc}
+  .data-table .link{color:#4a7cff;cursor:pointer;font-weight:500}.data-table .link:hover{text-decoration:underline}
+  .os-badge{display:inline-block;font-size:11px;padding:2px 6px;border-radius:3px;background:#f0f0f4;color:#666;margin-right:4px}
+  .empty-state{text-align:center;padding:40px 20px;color:#aaa;font-size:13px}
+  .modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.35);z-index:1000;justify-content:center;align-items:center}
+  .modal-overlay.show{display:flex}
+  .modal{background:#fff;border-radius:10px;width:480px;max-height:85vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.15)}
+  .modal-header{padding:18px 20px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f0f0f4}
+  .modal-header h3{font-size:15px;font-weight:700;color:#111}
+  .modal-close{font-size:20px;color:#999;cursor:pointer;background:none;border:none;line-height:1}.modal-close:hover{color:#444}
+  .modal-body{padding:20px}
+  .modal-footer{padding:14px 20px;display:flex;justify-content:flex-end;gap:8px;border-top:1px solid #f0f0f4}
+  .form-group{margin-bottom:16px}
+  .form-label{font-size:12.5px;font-weight:600;color:#333;margin-bottom:6px;display:flex;align-items:center;gap:4px}
+  .form-label .required{color:#e04040}
+  .form-input{width:100%;padding:8px 12px;border:1px solid #d0d0d8;border-radius:5px;font-size:13px;outline:none;font-family:inherit}
+  .form-input:focus{border-color:#4a7cff;box-shadow:0 0 0 2px rgba(74,124,255,.12)}
+  .form-input:disabled{background:#f4f4f6;cursor:not-allowed;opacity:.6}
+  .form-help{font-size:11.5px;color:#999;margin-top:4px}
+  .form-error{font-size:11.5px;color:#e04040;margin-top:4px;display:none}
+  .select-box{padding:7px 12px;border:1px solid #d0d0d8;border-radius:5px;font-size:13px;background:#fff;font-family:inherit;cursor:pointer;min-width:180px;outline:none;width:100%}
+  .select-box:focus{border-color:#4a7cff}
+  .select-box:disabled{background:#f4f4f6;cursor:not-allowed;opacity:.6}
+  .checkbox-group{display:flex;gap:16px;margin-top:4px}
+  .checkbox-group label{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px}
+  .checkbox-group input{width:15px;height:15px;accent-color:#4a7cff}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#f9fafb;border:1px solid #e8e8ec;border-radius:6px}
+  .toggle-row-left{display:flex;flex-direction:column;gap:2px}
+  .toggle-row-title{font-size:13px;font-weight:600;color:#333}
+  .toggle-row-desc{font-size:11.5px;color:#888}
+  .toggle-switch{position:relative;width:40px;height:22px;flex-shrink:0}
+  .toggle-switch input{opacity:0;width:0;height:0;position:absolute}
+  .toggle-slider{position:absolute;inset:0;cursor:pointer;border-radius:22px;background:#d0d0d8;transition:all .2s}
+  .toggle-slider::before{content:'';position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:all .2s;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+  .toggle-switch input:checked+.toggle-slider{background:#4a7cff}
+  .toggle-switch input:checked+.toggle-slider::before{transform:translateX(18px)}
+  .toggle-hint{margin-top:8px;padding:10px 14px;background:#eef3ff;border:1px solid #d0dbf0;border-radius:6px;font-size:12px;color:#3366aa;display:flex;align-items:center;gap:6px}
+  .toggle-hint.hidden{display:none}
+  .alert-modal{width:380px;padding:24px;text-align:center}
+  .alert-modal h4{font-size:15px;font-weight:700;margin-bottom:10px;color:#111}
+  .alert-modal p{font-size:13px;color:#666;line-height:1.6;margin-bottom:20px;white-space:pre-line}
+  .delete-confirm-info{background:#f8f8fa;border:1px solid #e8e8ec;border-radius:6px;padding:10px 14px;margin:12px 0;text-align:left}
+  .delete-confirm-info .label{font-size:11px;color:#888;margin-bottom:6px;font-weight:600}
+  .policy-list{max-height:120px;overflow-y:auto;margin:8px 0;text-align:left}
+  .policy-list .policy-item{display:flex;align-items:center;gap:6px;padding:5px 0;font-size:12.5px;color:#333}
+  .policy-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);background:#333;color:#fff;padding:10px 24px;border-radius:8px;font-size:13px;opacity:0;transition:all .3s;z-index:2000;white-space:nowrap}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .proto-badge{position:fixed;top:8px;right:12px;background:#ff6b35;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;z-index:9999;letter-spacing:.05em}
+  .role-switcher{position:fixed;top:56px;right:16px;background:#1e2532;border:1px solid #333;border-radius:8px;padding:8px 14px;display:flex;align-items:center;box-shadow:0 4px 16px rgba(0,0,0,.1);z-index:999;font-size:12px}
+  .role-switcher .role-label{font-weight:600;margin-bottom:0;margin-right:8px;color:#ccc;font-size:11px}
+  .role-switcher .role-btns{display:flex;gap:4px}
+  .role-btn{padding:5px 10px;border-radius:4px;border:1px solid #555;background:#2a3040;color:#bbb;cursor:pointer;font-size:11.5px;font-family:inherit;font-weight:500;transition:all .15s}
+  .role-btn.active{background:#4a7cff;color:#fff;border-color:#4a7cff}
+</style>
+</head>
+<body>
+<div class=&quot;proto-badge&quot;>PROTOTYPE v1.0</div>
+<div class=&quot;role-switcher&quot;>
+  <div class=&quot;role-label&quot;>관리자 역할 전환</div>
+  <div class=&quot;role-btns&quot;>
+    <button class=&quot;role-btn active&quot; onclick=&quot;switchRole('admin')&quot;>전체 관리자</button>
+    <button class=&quot;role-btn&quot; onclick=&quot;switchRole('dept')&quot;>부서관리자</button>
+  </div>
+</div>
+
+<div class=&quot;app-shell&quot;>
+  <div class=&quot;sidebar&quot;>
+    <div class=&quot;sidebar-title&quot;>공통 정책센터 <span class=&quot;close-btn&quot;>×</span></div>
+    <div class=&quot;sidebar-section&quot;><div class=&quot;sidebar-section-label&quot;>공통</div><div class=&quot;sidebar-item&quot;>민감정보 패턴 관리 그룹</div><div class=&quot;sidebar-item&quot;>사외 정책 IP 관리</div></div>
+    <div class=&quot;sidebar-section&quot;><div class=&quot;sidebar-section-label&quot;>정보유출방지</div><div class=&quot;sidebar-item&quot;>개별 매체 관리</div><div class=&quot;sidebar-item&quot;>파일첨부 확장자 관리 그룹</div><div class=&quot;sidebar-item&quot;>워터마크 관리</div><div class=&quot;sidebar-item&quot;>에이전트 정책 표시 설정</div></div>
+    <div class=&quot;sidebar-section&quot;><div class=&quot;sidebar-section-label&quot;>민감정보 보호</div><div class=&quot;sidebar-item&quot;>문서 분류 관리</div><div class=&quot;sidebar-item active&quot;>예외 관리 그룹</div></div>
+    <div class=&quot;sidebar-section&quot;><div class=&quot;sidebar-section-label&quot;>취약점 점검</div><div class=&quot;sidebar-item&quot;>점검 항목 관리 그룹</div><div class=&quot;sidebar-item&quot;>보안등급 설정</div></div>
+    <div class=&quot;sidebar-section&quot;><div class=&quot;sidebar-section-label&quot;>업무환경관리</div><div class=&quot;sidebar-item&quot;>실행 제어 소프트웨어 관리</div><div class=&quot;sidebar-item&quot;>소프트웨어 자산 관리 그룹</div></div>
+    <div class=&quot;sidebar-section&quot;><div class=&quot;sidebar-section-label&quot;>백업</div><div class=&quot;sidebar-item&quot;>백업 저장소 관리</div><div class=&quot;sidebar-item&quot;>백업 알림 수신 관리</div></div>
+  </div>
+  <div class=&quot;main-area&quot;>
+    <div class=&quot;topbar&quot;><div class=&quot;breadcrumb&quot;>서비스 <span>›</span> 정책 <span>›</span> 공통 정책센터 <span>›</span> <span class=&quot;current&quot; id=&quot;bc&quot;>예외 관리 그룹</span></div></div>
+    <div class=&quot;content-area&quot;>
+
+      <!-- List -->
+      <div class=&quot;page active&quot; id=&quot;pg-list&quot;>
+        <h1 class=&quot;page-title&quot;>예외 관리 그룹</h1>
+        <div class=&quot;page-info&quot;>ℹ️ 민감정보 검출 시 예외로 처리할 시스템 경로와 확장자를 그룹별로 관리합니다. 정책 세트에서 그룹을 선택하여 적용할 수 있습니다. <a>더 알아보기</a></div>
+        <div class=&quot;toolbar&quot;>
+          <input class=&quot;search-input&quot; placeholder=&quot;그룹명 검색&quot; id=&quot;grpSearch&quot; oninput=&quot;renderCards()&quot;>
+          <span class=&quot;count&quot; id=&quot;grpCount&quot;></span>
+          <button class=&quot;btn btn-primary&quot; onclick=&quot;openModal('createModal')&quot;>추가하기</button>
+        </div>
+        <div class=&quot;card-list&quot; id=&quot;cardList&quot;></div>
+      </div>
+
+      <!-- Detail -->
+      <div class=&quot;page&quot; id=&quot;pg-detail&quot;>
+        <div class=&quot;detail-header&quot;>
+          <button class=&quot;back-btn&quot; onclick=&quot;goList()&quot;>← 목록</button>
+          <input class=&quot;group-name-edit&quot; id=&quot;detName&quot; maxlength=&quot;30&quot; onblur=&quot;saveName()&quot;>
+          <span id=&quot;detDefault&quot; class=&quot;badge-default&quot; style=&quot;display:none&quot;>대표</span>
+          <span id=&quot;detLock&quot; class=&quot;lock-badge&quot; style=&quot;display:none&quot;>🔒 읽기 전용</span>
+        </div>
+        <div class=&quot;readonly-banner&quot; id=&quot;roBanner&quot; style=&quot;display:none&quot;>🔒 이 그룹은 다른 관리자가 생성한 그룹이므로 읽기 전용입니다. 설정을 변경할 수 없습니다.</div>
+
+        <div class=&quot;tabs&quot;>
+          <div class=&quot;tab-item active&quot; id=&quot;tabPath&quot; onclick=&quot;switchTab('path')&quot;>시스템 경로 예외</div>
+          <div class=&quot;tab-item&quot; id=&quot;tabExt&quot; onclick=&quot;switchTab('ext')&quot;>확장자 예외</div>
+        </div>
+
+        <!-- 시스템 경로 예외 탭 -->
+        <div id=&quot;sec-path&quot;>
+          <div class=&quot;block-wrapper&quot;>
+            <div class=&quot;block-overlay&quot; id=&quot;pathBlock&quot;></div>
+            <div class=&quot;toolbar&quot;>
+              <span class=&quot;count&quot; id=&quot;pathSel&quot;>0개 선택</span>
+              <span class=&quot;count&quot; id=&quot;pathCount&quot; style=&quot;margin-left:auto&quot;></span>
+              <button class=&quot;btn btn-sm btn-secondary&quot; id=&quot;btnAddPath&quot; onclick=&quot;openModal('addPathModal')&quot;>추가하기</button>
+              <button class=&quot;btn btn-sm btn-danger&quot; id=&quot;btnDelPath&quot; onclick=&quot;delPaths()&quot;>삭제하기</button>
+            </div>
+            <table class=&quot;data-table&quot;>
+              <thead><tr><th style=&quot;width:36px&quot;><input type=&quot;checkbox&quot; id=&quot;pathAll&quot; onchange=&quot;toggleAllPath()&quot;></th><th style=&quot;width:120px&quot;>경로명</th><th>경로</th><th style=&quot;width:100px&quot;>대상 OS</th><th style=&quot;width:140px&quot;>사유</th></tr></thead>
+              <tbody id=&quot;pathBody&quot;></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 확장자 예외 탭 -->
+        <div id=&quot;sec-ext&quot; style=&quot;display:none&quot;>
+          <div class=&quot;block-wrapper&quot;>
+            <div class=&quot;block-overlay&quot; id=&quot;extBlock&quot;></div>
+            <div class=&quot;toolbar&quot;>
+              <span class=&quot;count&quot; id=&quot;extSel&quot;>0개 선택</span>
+              <span class=&quot;count&quot; id=&quot;extCount&quot; style=&quot;margin-left:auto&quot;></span>
+              <button class=&quot;btn btn-sm btn-secondary&quot; id=&quot;btnAddExt&quot; onclick=&quot;openModal('addExtModal')&quot;>추가하기</button>
+              <button class=&quot;btn btn-sm btn-danger&quot; id=&quot;btnDelExt&quot; onclick=&quot;delExts()&quot;>삭제하기</button>
+            </div>
+            <table class=&quot;data-table&quot;>
+              <thead><tr><th style=&quot;width:36px&quot;><input type=&quot;checkbox&quot; id=&quot;extAll&quot; onchange=&quot;toggleAllExt()&quot;></th><th style=&quot;width:140px&quot;>확장자</th><th>사유</th></tr></thead>
+              <tbody id=&quot;extBody&quot;></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modals -->
+<div class=&quot;modal-overlay&quot; id=&quot;createModal&quot;>
+  <div class=&quot;modal&quot;>
+    <div class=&quot;modal-header&quot;><h3>예외 관리 그룹 생성</h3><button class=&quot;modal-close&quot; onclick=&quot;closeModal('createModal')&quot;>×</button></div>
+    <div class=&quot;modal-body&quot;>
+      <div class=&quot;form-group&quot;><div class=&quot;form-label&quot;>관리 그룹명 <span class=&quot;required&quot;>*</span></div><input class=&quot;form-input&quot; id=&quot;newGrpName&quot; maxlength=&quot;30&quot; placeholder=&quot;그룹명을 입력하세요.&quot;><div class=&quot;form-help&quot;>최대 30자</div><div class=&quot;form-error&quot; id=&quot;createErr&quot;>이미 등록된 그룹명입니다.</div></div>
+      <div class=&quot;form-group&quot;>
+        <div class=&quot;form-label&quot;>기본 시스템 예외 경로</div>
+        <div class=&quot;toggle-row&quot;>
+          <div class=&quot;toggle-row-left&quot;><span class=&quot;toggle-row-title&quot;>기본 시스템 예외 경로 적용</span><span class=&quot;toggle-row-desc&quot;>ProgramFiles, AppData, LocalAppData 등 12개 경로</span></div>
+          <label class=&quot;toggle-switch&quot;><input type=&quot;checkbox&quot; checked id=&quot;toggleSysPath&quot; onchange=&quot;updateHint()&quot;><span class=&quot;toggle-slider&quot;></span></label>
+        </div>
+        <div class=&quot;toggle-hint&quot; id=&quot;sysHint&quot;>✅ 기본 시스템 예외 경로 12개가 그룹에 포함됩니다. 생성 후 상세에서 개별 추가·삭제할 수 있습니다.</div>
+      </div>
+    </div>
+    <div class=&quot;modal-footer&quot;><button class=&quot;btn btn-secondary&quot; onclick=&quot;closeModal('createModal')&quot;>취소</button><button class=&quot;btn btn-primary&quot; onclick=&quot;createGroup()&quot;>생성하기</button></div>
+  </div>
+</div>
+
+<div class=&quot;modal-overlay&quot; id=&quot;addPathModal&quot;>
+  <div class=&quot;modal&quot;>
+    <div class=&quot;modal-header&quot;><h3>시스템 경로 예외 추가</h3><button class=&quot;modal-close&quot; onclick=&quot;closeModal('addPathModal')&quot;>×</button></div>
+    <div class=&quot;modal-body&quot;>
+      <div class=&quot;form-group&quot;><div class=&quot;form-label&quot;>경로 선택 <span class=&quot;required&quot;>*</span></div><select class=&quot;select-box&quot; id=&quot;pathType&quot; onchange=&quot;onPathTypeChange()&quot;><option value=&quot;direct&quot;>직접 입력</option><optgroup label=&quot;Windows&quot;><option value=&quot;ProgramFiles&quot;>ProgramFiles</option><option value=&quot;IECookies&quot;>IECookies</option><option value=&quot;IECache&quot;>IECache</option><option value=&quot;AppData&quot;>AppData</option><option value=&quot;CommonAppData&quot;>CommonAppData</option><option value=&quot;LocalAppData&quot;>LocalAppData</option><option value=&quot;휴지통&quot;>휴지통</option><option value=&quot;운영체제 시스템 파일&quot;>운영체제 시스템 파일</option><option value=&quot;숨김 파일&quot;>숨김 파일</option></optgroup><optgroup label=&quot;macOS&quot;><option value=&quot;System&quot;>System</option><option value=&quot;Applications&quot;>Applications</option><option value=&quot;Library&quot;>Library</option></optgroup></select></div>
+      <div class=&quot;form-group&quot;><div class=&quot;form-label&quot;>경로명 <span class=&quot;required&quot;>*</span></div><input class=&quot;form-input&quot; id=&quot;pathName&quot; maxlength=&quot;20&quot; placeholder=&quot;경로명을 입력하세요.&quot;><div class=&quot;form-help&quot;>최대 20자</div></div>
+      <div class=&quot;form-group&quot;><div class=&quot;form-label&quot;>파일/폴더 경로 <span class=&quot;required&quot;>*</span></div><input class=&quot;form-input&quot; id=&quot;pathValue&quot; placeholder=&quot;경로를 입력하세요.&quot;></div>
+      <div class=&quot;form-group&quot;><div class=&quot;form-label&quot;>대상 OS <span class=&quot;required&quot;>*</span></div><div class=&quot;checkbox-group&quot;><label><input type=&quot;checkbox&quot; id=&quot;osWin&quot; value=&quot;Windows&quot;> Windows</label><label><input type=&quot;checkbox&quot; id=&quot;osMac&quot; value=&quot;macOS&quot;> macOS</label></div></div>
+      <div class=&quot;form-group&quot;><div class=&quot;form-label&quot;>사유</div><input class=&quot;form-input&quot; id=&quot;pathReason&quot; placeholder=&quot;예외 사유를 입력해주세요.&quot;></div>
+    </div>
+    <div class=&quot;modal-footer&quot;><button class=&quot;btn btn-secondary&quot; onclick=&quot;closeModal('addPathModal')&quot;>취소</button><button class=&quot;btn btn-primary&quot; onclick=&quot;addPath()&quot;>추가하기</button></div>
+  </div>
+</div>
+
+<div class=&quot;modal-overlay&quot; id=&quot;addExtModal&quot;>
+  <div class=&quot;modal&quot;>
+    <div class=&quot;modal-header&quot;><h3>확장자 예외 추가</h3><button class=&quot;modal-close&quot; onclick=&quot;closeModal('addExtModal')&quot;>×</button></div>
+    <div class=&quot;modal-body&quot;>
+      <div class=&quot;form-group&quot;><div class=&quot;form-label&quot;>확장자 입력 <span class=&quot;required&quot;>*</span></div><input class=&quot;form-input&quot; id=&quot;newExtInput&quot; placeholder=&quot;확장자를 입력하세요. (쉼표로 구분, 최대 10개)&quot;><div class=&quot;form-help&quot;>예: tmp, log, bak</div></div>
+      <div class=&quot;form-group&quot;><div class=&quot;form-label&quot;>사유</div><input class=&quot;form-input&quot; id=&quot;extReason&quot; placeholder=&quot;예외 사유를 입력해주세요.&quot;></div>
+    </div>
+    <div class=&quot;modal-footer&quot;><button class=&quot;btn btn-secondary&quot; onclick=&quot;closeModal('addExtModal')&quot;>취소</button><button class=&quot;btn btn-primary&quot; onclick=&quot;addExts()&quot;>추가하기</button></div>
+  </div>
+</div>
+
+<div class=&quot;modal-overlay&quot; id=&quot;confirmModal&quot;>
+  <div class=&quot;modal&quot; style=&quot;width:420px&quot;>
+    <div class=&quot;modal-body&quot; style=&quot;padding:24px&quot;><h4 id=&quot;cfmTitle&quot; style=&quot;font-size:15px;font-weight:700;margin-bottom:10px&quot;></h4><p id=&quot;cfmMsg&quot; style=&quot;font-size:13px;color:#666;line-height:1.6&quot;></p><div id=&quot;cfmInfo&quot; class=&quot;delete-confirm-info&quot; style=&quot;display:none&quot;></div></div>
+    <div class=&quot;modal-footer&quot;><button class=&quot;btn btn-secondary&quot; onclick=&quot;closeModal('confirmModal')&quot;>취소</button><button class=&quot;btn btn-primary&quot; id=&quot;cfmBtn&quot; onclick=&quot;&quot;>확인</button></div>
+  </div>
+</div>
+
+<div class=&quot;modal-overlay&quot; id=&quot;alertModal&quot;>
+  <div class=&quot;modal alert-modal&quot;><h4 id=&quot;alertTitle&quot;></h4><p id=&quot;alertMsg&quot;></p><button class=&quot;btn btn-primary&quot; onclick=&quot;closeModal('alertModal')&quot;>확인</button></div>
+</div>
+
+<div class=&quot;toast&quot; id=&quot;toast&quot;></div>
+
+<script>
+let role='admin', curIdx=null, curTab='path', pendDel=null, pendDef=null;
+
+const SYS_PATHS=[
+  {name:'ProgramFiles',path:'ProgramFiles',os:['Windows'],reason:'시스템',isSystem:true},
+  {name:'IECookies',path:'IECookies',os:['Windows'],reason:'시스템',isSystem:true},
+  {name:'IECache',path:'IECache',os:['Windows'],reason:'시스템',isSystem:true},
+  {name:'AppData',path:'AppData',os:['Windows'],reason:'시스템',isSystem:true},
+  {name:'CommonAppData',path:'CommonAppData',os:['Windows'],reason:'시스템',isSystem:true},
+  {name:'LocalAppData',path:'LocalAppData',os:['Windows'],reason:'시스템',isSystem:true},
+  {name:'휴지통',path:'휴지통',os:['Windows'],reason:'시스템',isSystem:true},
+  {name:'운영체제 시스템 파일',path:'운영체제 시스템 파일',os:['Windows'],reason:'시스템',isSystem:true},
+  {name:'숨김 파일',path:'숨김 파일',os:['Windows'],reason:'시스템',isSystem:true},
+  {name:'System',path:'System',os:['macOS'],reason:'시스템',isSystem:true},
+  {name:'Applications',path:'Applications',os:['macOS'],reason:'시스템',isSystem:true},
+  {name:'Library',path:'Library',os:['macOS'],reason:'시스템',isSystem:true},
+];
+
+let groups=[
+  {name:'기본 예외',isDefault:true,owner:'me',ownerName:'나(전체관리자)',paths:JSON.parse(JSON.stringify(SYS_PATHS)).concat([{name:'사용자문서',path:'/Users/docs',os:['macOS'],reason:'업무용',isSystem:false}]),exts:[{ext:'tmp',reason:'임시 파일'},{ext:'log',reason:'로그 파일'},{ext:'bak',reason:'백업 파일'}],policyCount:5,modDate:'2026.03.15',policies:['전사 공통 정책','개발팀 정책','디자인팀 정책','외 2개']},
+  {name:'개발팀 예외',isDefault:false,owner:'me',ownerName:'나(전체관리자)',paths:JSON.parse(JSON.stringify(SYS_PATHS)).slice(0,6),exts:[{ext:'tmp',reason:'임시'},{ext:'log',reason:'로그'},{ext:'cache',reason:'캐시'}],policyCount:2,modDate:'2026.03.10',policies:['개발1팀 정책','개발2팀 정책']},
+  {name:'마케팅팀 예외',isDefault:false,owner:'other',ownerName:'김마케팅(부서관리자)',paths:JSON.parse(JSON.stringify(SYS_PATHS)).slice(0,4),exts:[{ext:'tmp',reason:'임시'}],policyCount:0,modDate:'2026.03.08',policies:[]},
+];
+
+function switchRole(r){role=r;document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');if(document.getElementById('pg-detail').classList.contains('active'))goDetail(curIdx);else renderCards()}
+
+function renderCards(){
+  const q=(document.getElementById('grpSearch')?.value||'').toLowerCase();
+  const f=groups.map((g,i)=>({...g,_i:i})).filter(g=>g.name.toLowerCase().includes(q));
+  document.getElementById('grpCount').textContent=`총 ${f.length}개`;
+  document.getElementById('cardList').innerHTML=f.map(g=>{
+    const i=g._i,ro=role==='dept'&amp;&amp;g.owner==='other';
+    let ni='';if(g.isDefault)ni+=`<span class=&quot;badge-default&quot;>대표</span>`;if(ro)ni+=`<span class=&quot;lock-badge&quot;>🔒 읽기 전용</span>`;
+    let fc='flag-icon';if(g.isDefault)fc+=' active';if(role==='dept')fc+=' no-interact';
+    let fk='';if(role==='admin'&amp;&amp;!g.isDefault)fk=`onclick=&quot;event.stopPropagation();tryDefault(${i})&quot;`;
+    let m=[`경로 예외 ${g.paths.length}개`,`확장자 예외 ${g.exts.length}개`];if(ro)m.push(`생성자: ${g.ownerName}`);m.push(`수정 일시 ${g.modDate}`);
+    let ph=g.policyCount>0?`<div class=&quot;policy-count&quot;>${g.policyCount}개 정책 적용 중<div class=&quot;tooltip&quot;>${g.policies.join('<br>')}</div></div>`:`<div class=&quot;policy-count&quot; style=&quot;color:#bbb&quot;>0개 정책 적용 중</div>`;
+    let dd=`<button class=&quot;dropdown-item&quot; onclick=&quot;event.stopPropagation();copyGroup(${i})&quot;>복사하기</button>`;
+    if((role==='admin'||(role==='dept'&amp;&amp;g.owner==='me'))&amp;&amp;!g.isDefault)dd+=`<button class=&quot;dropdown-item danger&quot; onclick=&quot;event.stopPropagation();tryDelGroup(${i})&quot;>삭제하기</button>`;
+    return `<div class=&quot;group-card${ro?' readonly':''}&quot; onclick=&quot;goDetail(${i})&quot;><div class=&quot;card-left&quot;><span class=&quot;${fc}&quot; ${fk} title=&quot;${g.isDefault?'대표 그룹':''}&quot;>🚩</span><div class=&quot;card-info&quot;><div class=&quot;card-name-row&quot;><span class=&quot;card-name&quot;>${g.name}</span>${ni}</div><div class=&quot;card-meta&quot;>${m.map(x=>`<span>${x}</span>`).join('<span class=&quot;dot&quot;>·</span>')}</div></div></div><div class=&quot;card-right&quot;>${ph}<button class=&quot;more-btn&quot; onclick=&quot;event.stopPropagation();toggleDD('dd-${i}')&quot;>⋯</button><div class=&quot;dropdown&quot; id=&quot;dd-${i}&quot;>${dd}</div></div></div>`;
+  }).join('');
+}
+
+function goList(){document.getElementById('pg-list').classList.add('active');document.getElementById('pg-detail').classList.remove('active');document.getElementById('bc').textContent='예외 관리 그룹';renderCards()}
+
+function goDetail(i){
+  curIdx=i;const g=groups[i],ro=role==='dept'&amp;&amp;g.owner==='other';
+  document.getElementById('pg-list').classList.remove('active');document.getElementById('pg-detail').classList.add('active');
+  document.getElementById('bc').textContent=g.name;
+  const ni=document.getElementById('detName');ni.value=g.name;ni.readOnly=ro;
+  document.getElementById('detDefault').style.display=g.isDefault?'':'none';
+  document.getElementById('detLock').style.display=ro?'':'none';
+  document.getElementById('roBanner').style.display=ro?'flex':'none';
+  document.getElementById('pathBlock').classList.toggle('show',ro);
+  document.getElementById('extBlock').classList.toggle('show',ro);
+  ['btnAddPath','btnDelPath'].forEach(id=>document.getElementById(id).style.display=ro?'none':'');
+  ['btnAddExt','btnDelExt'].forEach(id=>document.getElementById(id).style.display=ro?'none':'');
+  switchTab('path');
+}
+
+function switchTab(t){
+  curTab=t;
+  document.getElementById('tabPath').classList.toggle('active',t==='path');
+  document.getElementById('tabExt').classList.toggle('active',t==='ext');
+  document.getElementById('sec-path').style.display=t==='path'?'':'none';
+  document.getElementById('sec-ext').style.display=t==='ext'?'':'none';
+  if(t==='path')renderPaths();else renderExts();
+}
+
+function renderPaths(){
+  const g=groups[curIdx];
+  document.getElementById('pathCount').textContent=`총 ${g.paths.length}개`;
+  document.getElementById('pathSel').textContent='0개 선택';
+  document.getElementById('pathAll').checked=false;
+  if(!g.paths.length){document.getElementById('pathBody').innerHTML=`<tr><td colspan=&quot;5&quot; class=&quot;empty-state&quot;>등록된 시스템 경로 예외가 없습니다.</td></tr>`;return;}
+  document.getElementById('pathBody').innerHTML=g.paths.map((p,j)=>`<tr><td><input type=&quot;checkbox&quot; class=&quot;pchk&quot; data-i=&quot;${j}&quot; onchange=&quot;updatePathSel()&quot;></td><td class=&quot;link&quot; onclick=&quot;showToast('수정 팝업 (프로토타입에서는 미구현)')&quot;>${p.name}</td><td style=&quot;font-family:monospace;font-size:12px&quot;>${p.path}</td><td>${p.os.map(o=>`<span class=&quot;os-badge&quot;>${o}</span>`).join('')}</td><td style=&quot;color:#888&quot;>${p.reason||'—'}</td></tr>`).join('');
+}
+function updatePathSel(){document.getElementById('pathSel').textContent=document.querySelectorAll('.pchk:checked').length+'개 선택'}
+function toggleAllPath(){const c=document.getElementById('pathAll').checked;document.querySelectorAll('.pchk').forEach(x=>x.checked=c);updatePathSel()}
+
+function renderExts(){
+  const g=groups[curIdx];
+  document.getElementById('extCount').textContent=`총 ${g.exts.length}개`;
+  document.getElementById('extSel').textContent='0개 선택';
+  document.getElementById('extAll').checked=false;
+  if(!g.exts.length){document.getElementById('extBody').innerHTML=`<tr><td colspan=&quot;3&quot; class=&quot;empty-state&quot;>등록된 확장자 예외가 없습니다.</td></tr>`;return;}
+  document.getElementById('extBody').innerHTML=g.exts.map((e,j)=>`<tr><td><input type=&quot;checkbox&quot; class=&quot;echk&quot; data-i=&quot;${j}&quot; onchange=&quot;updateExtSel()&quot;></td><td class=&quot;link&quot; onclick=&quot;showToast('수정 팝업 (프로토타입에서는 미구현)')&quot; style=&quot;font-family:monospace&quot;>${e.ext}</td><td style=&quot;color:#888&quot;>${e.reason||'—'}</td></tr>`).join('');
+}
+function updateExtSel(){document.getElementById('extSel').textContent=document.querySelectorAll('.echk:checked').length+'개 선택'}
+function toggleAllExt(){const c=document.getElementById('extAll').checked;document.querySelectorAll('.echk').forEach(x=>x.checked=c);updateExtSel()}
+
+function saveName(){const g=groups[curIdx],n=document.getElementById('detName').value.trim();if(n&amp;&amp;n!==g.name){g.name=n;showToast('그룹명이 변경되었습니다.')}}
+
+// CRUD
+function createGroup(){
+  const n=document.getElementById('newGrpName').value.trim();
+  if(!n){showToast('그룹명을 입력해주세요.');return}
+  if(groups.some(g=>g.name===n)){document.getElementById('createErr').style.display='block';return}
+  document.getElementById('createErr').style.display='none';
+  const withSys=document.getElementById('toggleSysPath').checked;
+  groups.push({name:n,isDefault:false,owner:'me',ownerName:role==='dept'?'나(부서관리자)':'나(전체관리자)',paths:withSys?JSON.parse(JSON.stringify(SYS_PATHS)):[],exts:[],policyCount:0,modDate:'2026.03.19',policies:[]});
+  closeModal('createModal');document.getElementById('newGrpName').value='';renderCards();
+  showToast(withSys?`'${n}' 관리 그룹을 생성하였습니다. (기본 시스템 예외 경로 포함)`:`'${n}' 관리 그룹을 생성하였습니다. (빈 그룹)`);
+}
+function copyGroup(i){closeAllDD();const s=groups[i];let cn=`${s.name} (복사본)`;if(cn.length>30)cn=cn.substring(0,27)+'...';groups.push({name:cn,isDefault:false,owner:'me',ownerName:role==='dept'?'나(부서관리자)':'나(전체관리자)',paths:JSON.parse(JSON.stringify(s.paths)),exts:JSON.parse(JSON.stringify(s.exts)),policyCount:0,modDate:'2026.03.19',policies:[]});renderCards();showToast(`'${cn}' 관리 그룹을 생성하였습니다.`)}
+function tryDelGroup(i){
+  closeAllDD();const g=groups[i];
+  if(g.isDefault){showAlert('삭제 불가','대표 관리 그룹을 해제 후 삭제해주세요.');return}
+  if(groups.length<=1){showAlert('삭제 불가','최소 1개 이상의 그룹이 필요합니다.');return}
+  pendDel=i;let info=`<div class=&quot;label&quot;>선택 그룹</div><div style=&quot;font-size:13px;font-weight:600;margin-bottom:8px&quot;>${g.name} / 예외 항목 ${g.paths.length+g.exts.length}개</div>`;
+  if(g.policyCount>0)info+=`<div class=&quot;label&quot;>적용된 정책 (${g.policyCount})</div><div class=&quot;policy-list&quot;>${g.policies.map(p=>`<div class=&quot;policy-item&quot;><span class=&quot;policy-dot&quot; style=&quot;background:#4a7cff&quot;></span>${p}</div>`).join('')}</div>`;
+  showConfirm('이 예외 관리 그룹을 삭제하시겠습니까?','삭제 시 적용 중인 정책에서 \'대표 그룹\'으로 자동 변경됩니다.',info,'confirmDelGroup()');
+}
+function confirmDelGroup(){const n=groups[pendDel].name;groups.splice(pendDel,1);closeModal('confirmModal');renderCards();showToast(`'${n}' 관리 그룹을 삭제하였습니다.`)}
+function tryDefault(i){pendDef=i;showConfirm(`대표 그룹을 '${groups[i].name}'(으)로 변경하시겠습니까?`,'그룹이 지정되지 않은 정책 세트에 자동 적용됩니다.',null,'confirmDefault()')}
+function confirmDefault(){groups.forEach(g=>g.isDefault=false);groups[pendDef].isDefault=true;closeModal('confirmModal');renderCards();showToast(`대표 그룹을 '${groups[pendDef].name}'(으)로 변경하였습니다.`)}
+
+function onPathTypeChange(){
+  const v=document.getElementById('pathType').value;
+  const isDirect=v==='direct';
+  document.getElementById('pathName').disabled=!isDirect;document.getElementById('pathValue').disabled=!isDirect;
+  document.getElementById('osWin').disabled=!isDirect;document.getElementById('osMac').disabled=!isDirect;
+  if(!isDirect){
+    document.getElementById('pathName').value=v;document.getElementById('pathValue').value=v;
+    const macPaths=['System','Applications','Library'];
+    document.getElementById('osWin').checked=!macPaths.includes(v);document.getElementById('osMac').checked=macPaths.includes(v);
+  } else {document.getElementById('pathName').value='';document.getElementById('pathValue').value='';document.getElementById('osWin').checked=false;document.getElementById('osMac').checked=false;}
+}
+
+function addPath(){
+  const n=document.getElementById('pathName').value.trim(),p=document.getElementById('pathValue').value.trim();
+  if(!n){showToast('경로명을 입력해주세요.');return}if(!p){showToast('경로를 입력해주세요.');return}
+  const os=[];if(document.getElementById('osWin').checked)os.push('Windows');if(document.getElementById('osMac').checked)os.push('macOS');
+  if(!os.length){showToast('대상 OS를 선택해주세요.');return}
+  const g=groups[curIdx];if(g.paths.some(x=>x.path===p)){showToast('이미 등록된 시스템 경로입니다.');return}
+  const reason=document.getElementById('pathReason').value.trim();
+  g.paths.push({name:n,path:p,os,reason:reason||'',isSystem:document.getElementById('pathType').value!=='direct'});
+  g.modDate='2026.03.19';closeModal('addPathModal');resetPathForm();renderPaths();showToast(`'${n}' 시스템 경로 예외를 추가하였습니다.`);
+}
+function resetPathForm(){['pathName','pathValue','pathReason'].forEach(id=>document.getElementById(id).value='');document.getElementById('pathType').value='direct';document.getElementById('osWin').checked=false;document.getElementById('osMac').checked=false;['pathName','pathValue','osWin','osMac'].forEach(id=>document.getElementById(id).disabled=false)}
+
+function delPaths(){
+  const sel=document.querySelectorAll('.pchk:checked');if(!sel.length){showToast('삭제할 항목을 선택해주세요.');return}
+  showConfirm(`선택한 ${sel.length}개 시스템 경로 예외를 삭제하시겠습니까?`,'',null,'confirmDelPaths()');
+}
+function confirmDelPaths(){
+  const g=groups[curIdx],idxs=[...document.querySelectorAll('.pchk:checked')].map(c=>+c.dataset.i).sort((a,b)=>b-a);
+  idxs.forEach(i=>g.paths.splice(i,1));g.modDate='2026.03.19';closeModal('confirmModal');renderPaths();showToast('선택한 시스템 경로 예외를 삭제하였습니다.');
+}
+
+function addExts(){
+  const v=document.getElementById('newExtInput').value.trim();if(!v){showToast('확장자명을 입력해주세요.');return}
+  const g=groups[curIdx],reason=document.getElementById('extReason').value.trim();
+  const newE=v.split(',').map(e=>e.trim().toLowerCase().replace(/^\./,'')).filter(e=>e).slice(0,10);
+  const dups=newE.filter(e=>g.exts.some(x=>x.ext===e)),added=newE.filter(e=>!g.exts.some(x=>x.ext===e));
+  if(dups.length&amp;&amp;!added.length){showToast('이미 등록된 확장자입니다.');return}
+  if(dups.length&amp;&amp;added.length){closeModal('addExtModal');showConfirm('이미 등록된 확장자가 있습니다.','등록된 확장자를 제외하고 등록하시겠습니까?',null,`confirmAddExts('${added.join(',')}','${reason}')`);return}
+  added.forEach(e=>g.exts.push({ext:e,reason}));g.modDate='2026.03.19';closeModal('addExtModal');document.getElementById('newExtInput').value='';document.getElementById('extReason').value='';renderExts();showToast(`'${added.join(', ')}' 확장자 예외를 추가하였습니다.`);
+}
+function confirmAddExts(exts,reason){const g=groups[curIdx];exts.split(',').forEach(e=>g.exts.push({ext:e,reason}));g.modDate='2026.03.19';closeModal('confirmModal');renderExts();showToast(`'${exts}' 확장자 예외를 추가하였습니다.`)}
+
+function delExts(){
+  const sel=document.querySelectorAll('.echk:checked');if(!sel.length){showToast('삭제할 항목을 선택해주세요.');return}
+  showConfirm(`선택한 ${sel.length}개 확장자 예외를 삭제하시겠습니까?`,'',null,'confirmDelExts()');
+}
+function confirmDelExts(){
+  const g=groups[curIdx],idxs=[...document.querySelectorAll('.echk:checked')].map(c=>+c.dataset.i).sort((a,b)=>b-a);
+  idxs.forEach(i=>g.exts.splice(i,1));g.modDate='2026.03.19';closeModal('confirmModal');renderExts();showToast('선택한 확장자 예외를 삭제하였습니다.');
+}
+
+// Util
+function updateHint(){document.getElementById('sysHint').classList.toggle('hidden',!document.getElementById('toggleSysPath').checked)}
+function toggleDD(id){closeAllDD();document.getElementById(id).classList.toggle('show')}
+function closeAllDD(){document.querySelectorAll('.dropdown').forEach(d=>d.classList.remove('show'))}
+document.addEventListener('click',closeAllDD);
+function openModal(id){document.getElementById(id).classList.add('show')}
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+function showAlert(t,m){document.getElementById('alertTitle').textContent=t;document.getElementById('alertMsg').textContent=m;openModal('alertModal')}
+function showConfirm(t,m,info,fn){document.getElementById('cfmTitle').textContent=t;document.getElementById('cfmMsg').textContent=m;const inf=document.getElementById('cfmInfo');if(info){inf.innerHTML=info;inf.style.display='block'}else{inf.style.display='none'}document.getElementById('cfmBtn').setAttribute('onclick',fn+';');openModal('confirmModal')}
+function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
+renderCards();
+</script>
+</body>
+</html>
+"></iframe>
+  </div>
+</div>
+
+<script>
+function switchMenu(key, el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.frame').forEach(f => f.classList.remove('active'));
+  document.getElementById('frame-' + key).classList.add('active');
+}
+</script>
+</body>
+</html>
