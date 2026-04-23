@@ -1,0 +1,847 @@
+<!--
+  Prototype
+  화면명: 소프트웨어 추가 팝업 (Windows / macOS)
+  기반 문서: 소프트웨어추가_화면설계서_v1.2_260423.md
+  버전: v1.2
+  작성일: 260423
+  목적: Windows 탐지 조건 흐름 / macOS Bundle ID 필수·Team ID 선택 / 포커스 이동 유효성 검사 확인
+  변경: v1.1 대비 Team ID 필수 → 선택으로 변경 (* 제거, blur/submit 검사 제외)
+-->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>소프트웨어 추가 팝업 프로토타입 v1.2</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+:root {
+  --primary: #3B82F6;
+  --primary-hover: #2563EB;
+  --border: #E5E7EB;
+  --text-1: #111827;
+  --text-2: #6B7280;
+  --text-3: #9CA3AF;
+  --danger: #EF4444;
+  --success: #10B981;
+  --bg-disabled: #F9FAFB;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px; color: var(--text-1);
+  background: #D1D5DB; min-height: 100vh;
+}
+
+/* ── Prototype Header ── */
+.pt-header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 2000;
+  background: #0F172A; height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px;
+}
+.pt-header-left { display: flex; flex-direction: column; gap: 2px; }
+.pt-header-title { font-size: 15px; font-weight: 700; color: #F8FAFC; }
+.pt-header-desc { font-size: 12px; color: #94A3B8; }
+.pt-header-meta { font-size: 12px; color: #64748B; }
+
+/* ── Layout ── */
+.page-wrap {
+  margin-top: 64px; min-height: calc(100vh - 64px);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 32px 24px; gap: 24px;
+}
+
+/* ── Check Panel ── */
+.check-panel {
+  width: 230px; flex-shrink: 0;
+  background: #fff; border-radius: 10px; border: 1px solid var(--border);
+  padding: 18px 16px; position: sticky; top: 88px;
+}
+.check-panel-title {
+  font-size: 11px; font-weight: 700; color: var(--text-2);
+  text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px;
+}
+.spec-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 14px; }
+.spec-ref {
+  display: inline-block; padding: 2px 7px; border-radius: 3px;
+  font-size: 11px; background: #EEF2FF; color: #4338CA;
+  font-weight: 600; border: 1px solid #C7D2FE;
+}
+.spec-ref.mac { background: #F0FDF4; color: #166534; border-color: #BBF7D0; }
+.check-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.check-list li {
+  display: flex; gap: 7px; align-items: flex-start;
+  font-size: 12px; color: var(--text-2); line-height: 1.55;
+}
+.check-list li::before { content: '·'; color: var(--primary); font-weight: 700; flex-shrink: 0; }
+.check-list li.mac::before { color: #22C55E; }
+.check-divider { margin: 12px 0; border: none; border-top: 1px solid var(--border); }
+.check-sub-title { font-size: 11px; font-weight: 600; color: var(--text-3); margin-bottom: 8px; }
+.os-label {
+  font-size: 11px; font-weight: 700; color: var(--text-3);
+  text-transform: uppercase; letter-spacing: 0.04em;
+  margin-top: 10px; margin-bottom: 6px;
+}
+
+/* ── Modal Area ── */
+.modal-area { flex: 1; max-width: 520px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.state-badge {
+  width: 100%; background: #fff; border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 14px;
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--text-2);
+}
+.state-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); flex-shrink: 0; transition: background 0.2s; }
+.state-dot.warn { background: #F59E0B; }
+.state-dot.err { background: var(--danger); }
+
+/* ── Modal Card ── */
+.modal-card {
+  width: 100%; background: #fff; border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.07);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+}
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px 0; }
+.modal-title { font-size: 17px; font-weight: 700; }
+.btn-close {
+  width: 30px; height: 30px; background: none; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 6px; color: var(--text-2); font-size: 18px;
+  transition: background 0.15s; font-family: inherit;
+}
+.btn-close:hover { background: #F3F4F6; }
+.modal-body { padding: 20px 24px; }
+.modal-footer { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+
+/* ── Form ── */
+.field { margin-bottom: 18px; }
+.field:last-child { margin-bottom: 0; }
+.field-label { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 5px; margin-bottom: 7px; }
+.req { color: var(--danger); font-size: 14px; }
+.opt { font-size: 11px; font-weight: 400; color: var(--text-3); }
+
+/* Tooltip */
+.tip-wrap {
+  position: relative; display: inline-flex;
+  align-items: center; justify-content: center;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: #E5E7EB; color: var(--text-2);
+  font-size: 10px; font-weight: 700; cursor: pointer;
+}
+.tip-wrap .tip-popup {
+  display: none; position: absolute; left: 22px; top: -4px;
+  width: 240px; background: #1F2937; color: #F9FAFB;
+  font-size: 11px; font-weight: 400; line-height: 1.65;
+  padding: 9px 11px; border-radius: 7px;
+  z-index: 999; pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25); white-space: normal;
+}
+.tip-wrap:hover .tip-popup { display: block; }
+
+/* Input / Select */
+.f-input {
+  width: 100%; height: 38px;
+  border: 1px solid var(--border); border-radius: 7px;
+  padding: 0 12px; font-size: 13px; color: var(--text-1);
+  background: #fff; outline: none; font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.f-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+.f-input.e { border-color: var(--danger); }
+.f-input.e:focus { box-shadow: 0 0 0 3px rgba(239,68,68,0.1); }
+.f-input:disabled { background: var(--bg-disabled); color: var(--text-3); cursor: not-allowed; }
+.f-select {
+  height: 38px; border: 1px solid var(--border); border-radius: 7px;
+  padding: 0 10px; font-size: 13px; color: var(--text-1);
+  background: #fff; outline: none; cursor: pointer; font-family: inherit;
+  transition: border-color 0.15s;
+}
+.f-select:focus { border-color: var(--primary); }
+.f-select.placeholder { color: var(--text-2); }
+.err-msg { font-size: 12px; color: var(--danger); margin-top: 4px; display: none; }
+.err-msg.show { display: block; }
+
+/* Field hint */
+.field-hint { font-size: 12px; color: var(--text-3); margin-top: 5px; line-height: 1.5; }
+
+/* ── Detection rows ── */
+.det-rows { display: flex; flex-direction: column; }
+.det-row { display: flex; align-items: flex-start; gap: 8px; }
+.type-locked {
+  width: 148px; flex-shrink: 0; height: 38px;
+  border: 1px solid var(--border); border-radius: 7px;
+  padding: 0 12px; font-size: 13px; color: var(--text-2);
+  background: var(--bg-disabled); display: flex; align-items: center;
+}
+.val-wrap { flex: 1; }
+.del-btn {
+  width: 30px; height: 38px; flex-shrink: 0;
+  background: none; border: 1px solid var(--border); border-radius: 7px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: var(--text-2); font-size: 13px; font-family: inherit; transition: all 0.15s;
+}
+.del-btn:hover { background: #FEF2F2; border-color: #FCA5A5; color: var(--danger); }
+.or-sep { display: flex; align-items: center; gap: 8px; padding: 8px 0; }
+.or-line { flex: 1; height: 1px; background: #F3F4F6; }
+.or-label { font-size: 11px; font-weight: 700; color: var(--text-3); letter-spacing: 0.06em; }
+.add-or-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-top: 10px; padding: 0;
+  background: none; border: none; cursor: pointer;
+  color: var(--primary); font-size: 13px; font-weight: 500;
+  font-family: inherit; transition: color 0.15s;
+}
+.add-or-btn:hover { color: var(--primary-hover); }
+
+/* ── Guide popup ── */
+.guide-overlay {
+  display: none; position: fixed; inset: 0; z-index: 3000;
+  background: rgba(17,24,39,0.5);
+  align-items: center; justify-content: center;
+}
+.guide-overlay.show { display: flex; }
+.guide-modal {
+  background: #fff; border-radius: 12px;
+  width: 480px; max-width: 95vw;
+  max-height: 80vh; overflow-y: auto;
+  box-shadow: 0 20px 48px rgba(0,0,0,0.2);
+  padding: 24px;
+}
+.guide-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.guide-title { font-size: 16px; font-weight: 700; }
+.guide-section { margin-bottom: 20px; }
+.guide-section:last-of-type { margin-bottom: 0; }
+.guide-section-title {
+  font-size: 13px; font-weight: 700; color: var(--text-1);
+  display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+}
+.guide-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 10px;
+  font-size: 11px; font-weight: 600; background: var(--primary); color: #fff;
+}
+.guide-badge.recommend { background: #10B981; }
+.guide-body { font-size: 13px; color: var(--text-2); line-height: 1.7; }
+.guide-tip {
+  margin-top: 8px; padding: 9px 12px;
+  background: #F9FAFB; border-radius: 6px; border-left: 3px solid var(--border);
+  font-size: 12px; color: var(--text-2); line-height: 1.6;
+}
+.guide-tip strong { color: var(--text-1); font-size: 12px; }
+.guide-divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+.guide-or-box {
+  padding: 12px 14px; background: #EFF6FF; border-radius: 8px;
+  border: 1px solid #BFDBFE;
+}
+.guide-or-title { font-size: 13px; font-weight: 700; color: #1D4ED8; margin-bottom: 4px; }
+.guide-or-body { font-size: 12px; color: #1E40AF; line-height: 1.65; }
+
+/* ── Buttons ── */
+.btn-primary {
+  height: 36px; padding: 0 20px;
+  background: var(--primary); color: #fff;
+  border: none; border-radius: 7px;
+  font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+  transition: background 0.15s;
+}
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-secondary {
+  height: 36px; padding: 0 16px;
+  background: #fff; color: #374151;
+  border: 1px solid var(--border); border-radius: 7px;
+  font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit;
+  transition: background 0.15s;
+}
+.btn-secondary:hover { background: #F9FAFB; }
+
+/* ── Toast ── */
+.toast {
+  position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+  padding: 12px 22px; border-radius: 8px;
+  font-size: 13px; font-weight: 500; color: #fff;
+  z-index: 9999; opacity: 0; transition: opacity 0.25s;
+  pointer-events: none; white-space: nowrap; background: #374151;
+}
+.toast.show { opacity: 1; }
+.toast.t-ok { background: #065F46; }
+.toast.t-err { background: #7F1D1D; }
+
+/* ── Reopen ── */
+.reopen-btn {
+  display: none; position: fixed; bottom: 32px; right: 32px; z-index: 1500;
+  padding: 10px 20px; background: var(--primary); color: #fff;
+  border: none; border-radius: 8px;
+  font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+  box-shadow: 0 4px 14px rgba(59,130,246,0.35); transition: background 0.15s;
+}
+.reopen-btn:hover { background: var(--primary-hover); }
+.reopen-btn.show { display: block; }
+
+/* ── Closed ── */
+.closed-msg {
+  display: none; width: 100%; background: #fff;
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 32px 24px; text-align: center; color: var(--text-2);
+  font-size: 13px; line-height: 2;
+}
+.closed-msg.show { display: block; }
+</style>
+</head>
+<body>
+
+<!-- Prototype Header -->
+<header class="pt-header">
+  <div class="pt-header-left">
+    <span class="pt-header-title">소프트웨어 추가 팝업 프로토타입</span>
+    <span class="pt-header-desc">업무환경관리 > SW 자산관리 | Windows 탐지 조건 / macOS Bundle ID 필수·Team ID 선택 / 포커스 이동 유효성 검사</span>
+  </div>
+  <span class="pt-header-meta">v1.2 · 260423</span>
+</header>
+
+<div class="page-wrap">
+
+  <!-- Check Panel -->
+  <aside class="check-panel">
+    <div class="check-panel-title">확인 항목</div>
+    <div class="spec-tags">
+      <span class="spec-ref">Default 탐지 조건</span>
+      <span class="spec-ref">OR 조건 추가</span>
+      <span class="spec-ref">셀렉박스 중복 제어</span>
+      <span class="spec-ref">blur 유효성 검사</span>
+      <span class="spec-ref mac">macOS 폼</span>
+    </div>
+    <div class="os-label">Windows</div>
+    <ul class="check-list">
+      <li>레지스트리 경로가 Default로 선택되는가</li>
+      <li>OR 조건 추가·삭제 동작이 올바른가</li>
+      <li>이미 선택된 유형이 다른 행에서 제외되는가</li>
+      <li>마지막 행만 유형을 수정할 수 있는가</li>
+    </ul>
+    <div class="os-label">macOS</div>
+    <ul class="check-list">
+      <li class="mac">OS 전환 시 폼이 올바르게 전환되는가</li>
+      <li class="mac">Bundle ID 미입력 시 오류가 발생하는가</li>
+      <li class="mac">Team ID는 빈 값으로 추가하기가 가능한가</li>
+    </ul>
+    <div class="os-label">공통</div>
+    <ul class="check-list">
+      <li>필드에서 포커스가 벗어날 때 오류가 표시되는가</li>
+      <li>추가하기 클릭 시 미확인 필드도 일괄 검사되는가</li>
+    </ul>
+    <hr class="check-divider">
+    <div class="check-sub-title">인터랙션 가이드</div>
+    <ul class="check-list">
+      <li>OS 전환 시 입력값은 초기화됨</li>
+      <li>유형 미선택 상태의 값 필드는 비활성화</li>
+      <li>취소·X 클릭 시 폼 초기화 후 닫힘</li>
+    </ul>
+  </aside>
+
+  <!-- Modal Area -->
+  <div class="modal-area" id="modal-area">
+    <div class="state-badge" id="state-badge">
+      <span class="state-dot" id="state-dot"></span>
+      <span id="state-text">초기 상태 — Windows / 탐지 조건 1개 (레지스트리 경로 Default)</span>
+    </div>
+
+    <!-- Modal Card -->
+    <div class="modal-card" id="modal-card">
+      <div class="modal-header">
+        <span class="modal-title">소프트웨어 추가</span>
+        <button class="btn-close" onclick="handleCancel()" title="닫기">✕</button>
+      </div>
+      <div class="modal-body">
+
+        <!-- OS -->
+        <div class="field">
+          <div class="field-label">OS</div>
+          <select class="f-select" id="os-select" style="width:160px" onchange="onOsChange(this.value)">
+            <option value="windows" selected>Windows</option>
+            <option value="macos">macOS</option>
+          </select>
+        </div>
+
+        <!-- 소프트웨어명 (공통) -->
+        <div class="field">
+          <div class="field-label">소프트웨어명 <span class="req">*</span></div>
+          <input type="text" class="f-input" id="sw-name"
+            placeholder="소프트웨어 명칭을 입력하세요."
+            oninput="onSwNameInput()"
+            onblur="blurSwName()">
+          <div class="err-msg" id="sw-name-err">소프트웨어명을 입력해주세요.</div>
+        </div>
+
+        <!-- Windows: 탐지 조건 -->
+        <div class="field" id="field-detection">
+          <div class="field-label">
+            탐지 조건 <span class="req">*</span>
+            <span class="tip-wrap" onclick="openGuide()" title="탐지 조건 안내 보기">?
+              <span class="tip-popup">클릭하면 각 탐지 조건의 의미와 설정 방법을 확인할 수 있습니다.</span>
+            </span>
+          </div>
+          <div class="det-rows" id="det-rows"></div>
+          <button class="add-or-btn" id="add-or-btn" onclick="addOrRow()">
+            <svg viewBox="0 0 16 16" fill="none" width="14" height="14" style="flex-shrink:0">
+              <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M8 5.5v5M5.5 8h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            OR 조건 추가
+          </button>
+        </div>
+
+        <!-- macOS: Bundle ID + Team ID -->
+        <div id="macos-fields" style="display:none">
+          <div class="field">
+            <div class="field-label">Bundle ID <span class="req">*</span></div>
+            <input type="text" class="f-input" id="bundle-id"
+              placeholder="예: com.vendor.AppName"
+              oninput="onMacInput('bundleId', this.value)"
+              onblur="blurMacField('bundleId')">
+            <div class="err-msg" id="bundle-id-err">Bundle ID를 입력해주세요.</div>
+            <div class="field-hint">역방향 도메인 형식 (예: com.google.Chrome). 앱의 Info.plist > CFBundleIdentifier 참고.</div>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <div class="field-label">Team ID <span class="opt">(선택)</span></div>
+            <input type="text" class="f-input" id="team-id"
+              placeholder="예: ABCDE12345"
+              oninput="onMacInput('teamId', this.value)">
+            <div class="field-hint">Apple Developer Program 멤버십 페이지에서 확인 가능한 10자리 영숫자 코드.</div>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="handleCancel()">취소</button>
+        <button class="btn-primary" onclick="handleSubmit()">추가하기</button>
+      </div>
+    </div>
+
+    <div class="closed-msg" id="closed-msg">
+      팝업이 닫혔습니다.<br>
+      <span style="color:var(--text-3);font-size:12px">우측 하단 버튼을 클릭하면 다시 열 수 있습니다.</span>
+    </div>
+  </div>
+</div>
+
+<!-- Reopen button -->
+<button class="reopen-btn" id="reopen-btn" onclick="reopenModal()">+ 소프트웨어 추가</button>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- ── Guide Popup ── -->
+<div class="guide-overlay" id="guide-overlay" onclick="closeGuideIfBg(event)">
+  <div class="guide-modal" id="guide-modal">
+    <div class="guide-header">
+      <span class="guide-title">탐지 조건이란?</span>
+      <button class="btn-close" onclick="closeGuide()">✕</button>
+    </div>
+
+    <p style="font-size:13px;color:var(--text-2);line-height:1.7;margin-bottom:18px">
+      소프트웨어가 PC에 설치되어 있는지 판단하는 기준입니다.<br>
+      아래 세 가지 방법 중 하나 이상을 입력해야 합니다.
+    </p>
+
+    <div class="guide-section">
+      <div class="guide-section-title">
+        레지스트리 경로
+        <span class="guide-badge recommend">권장</span>
+      </div>
+      <div class="guide-body">
+        설치 프로그램이 Windows 레지스트리에 기록한 경로입니다. MSI·NSIS 등 표준 방식으로 배포된 소프트웨어에서 사용할 수 있으며, 가장 신뢰할 수 있는 탐지 방법입니다.
+      </div>
+      <div class="guide-tip">
+        <strong>확인 방법</strong><br>
+        실행(Win+R) → regedit 실행<br>
+        HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\ 하위 항목 참고
+      </div>
+    </div>
+
+    <hr class="guide-divider">
+
+    <div class="guide-section">
+      <div class="guide-section-title">
+        설치 경로
+        <span class="guide-badge" style="background:#6B7280">보조</span>
+      </div>
+      <div class="guide-body">
+        소프트웨어가 설치된 폴더 경로를 기준으로 탐지합니다. 레지스트리에 등록되지 않는 portable 앱이나 비표준 설치 방식에 유용합니다.
+      </div>
+      <div class="guide-tip">
+        <strong>주의</strong><br>
+        사용자 지정 경로에 설치된 경우 탐지에서 누락될 수 있습니다.
+      </div>
+    </div>
+
+    <hr class="guide-divider">
+
+    <div class="guide-section">
+      <div class="guide-section-title">
+        프로세스명
+        <span class="guide-badge" style="background:#6B7280">보조</span>
+      </div>
+      <div class="guide-body">
+        소프트웨어 실행 시 생성되는 .exe 파일명으로 탐지합니다. 소프트웨어가 실행 중인 PC에서만 탐지됩니다. 설치되어 있어도 실행하지 않은 PC에서는 탐지되지 않습니다.
+      </div>
+      <div class="guide-tip">
+        <strong>확인 방법</strong><br>
+        작업 관리자(Ctrl+Shift+Esc) → 프로세스 탭에서 실행 파일명 확인
+      </div>
+    </div>
+
+    <hr class="guide-divider">
+
+    <div class="guide-or-box">
+      <div class="guide-or-title">OR 조건이란?</div>
+      <div class="guide-or-body">
+        여러 탐지 기준을 등록하면, 그 중 하나라도 일치할 경우 해당 소프트웨어가 설치된 것으로 인식합니다. 설치 경로가 다를 수 있는 버전이나 portable 버전을 함께 탐지할 때 활용합니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ─── State ─── */
+var rows = [{ id: 1, type: '레지스트리 경로', value: '' }];
+var nextId = 2;
+var formErrors = {};
+var mac = { bundleId: '', teamId: '' };
+var currentOs = 'windows';
+
+var TYPES = ['레지스트리 경로', '설치 경로', '프로세스명'];
+var PLACEHOLDERS = {
+  '레지스트리 경로': 'HKEY_LOCAL_MACHINE\\SOFTWARE\\{벤더명}\\{앱명}',
+  '설치 경로': 'C:\\Program Files\\Vendor\\AppName\\',
+  '프로세스명': 'notepad.exe'
+};
+var ERR_MSGS = {
+  '레지스트리 경로': '레지스트리 경로를 입력해주세요.',
+  '설치 경로': '설치 경로를 입력해주세요.',
+  '프로세스명': '프로세스명을 입력해주세요.'
+};
+
+/* ─── Helpers ─── */
+function getUsedTypes(excludeId) {
+  return rows.filter(function(r) { return r.id !== excludeId && r.type; }).map(function(r) { return r.type; });
+}
+function esc(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ─── Render Detection Rows ─── */
+function renderRows() {
+  var container = document.getElementById('det-rows');
+  if (!container) return;
+  container.innerHTML = '';
+  var lastIdx = rows.length - 1;
+
+  rows.forEach(function(row, idx) {
+    var isLast = idx === lastIdx;
+    var isFirst = idx === 0;
+    var rowErr = formErrors['row-' + row.id] || '';
+
+    if (idx > 0) {
+      var sep = document.createElement('div');
+      sep.className = 'or-sep';
+      sep.innerHTML = '<div class="or-line"></div><span class="or-label">OR</span><div class="or-line"></div>';
+      container.appendChild(sep);
+    }
+
+    var rowEl = document.createElement('div');
+    rowEl.className = 'det-row';
+
+    var typeHtml;
+    if (isLast) {
+      var usedTypes = getUsedTypes(row.id);
+      var availTypes = TYPES.filter(function(t) { return !usedTypes.includes(t); });
+      var opts = !row.type ? '<option value="" disabled selected>선택</option>' : '';
+      availTypes.forEach(function(t) {
+        opts += '<option value="' + t + '"' + (row.type === t ? ' selected' : '') + '>' + t + '</option>';
+      });
+      typeHtml = '<select class="f-select' + (!row.type ? ' placeholder' : '') + '" style="width:148px;flex-shrink:0" onchange="onTypeChange(' + row.id + ',this.value)">' + opts + '</select>';
+    } else {
+      typeHtml = '<div class="type-locked">' + esc(row.type) + '</div>';
+    }
+
+    var ph = row.type ? PLACEHOLDERS[row.type] : '';
+    var isDisabled = !row.type;
+    var valHtml = '<div class="val-wrap">'
+      + '<input type="text" class="f-input' + (rowErr ? ' e' : '') + '" id="val-input-' + row.id + '"'
+      + (isDisabled ? ' disabled' : '')
+      + ' placeholder="' + esc(ph) + '"'
+      + ' value="' + esc(row.value) + '"'
+      + ' oninput="onValueChange(' + row.id + ',this.value)"'
+      + ' onblur="blurRowValue(' + row.id + ')">'
+      + '<div class="err-msg' + (rowErr ? ' show' : '') + '" id="val-err-' + row.id + '">' + esc(rowErr) + '</div>'
+      + '</div>';
+
+    var delHtml = !isFirst ? '<button class="del-btn" onclick="removeRow(' + row.id + ')" title="이 조건 삭제">✕</button>' : '';
+
+    rowEl.innerHTML = typeHtml + valHtml + delHtml;
+    container.appendChild(rowEl);
+  });
+
+  var addBtn = document.getElementById('add-or-btn');
+  if (addBtn) addBtn.style.display = rows.length >= 3 ? 'none' : 'inline-flex';
+  updateStateBadge();
+}
+
+/* ─── Windows Handlers ─── */
+function onTypeChange(rowId, newType) {
+  var row = rows.find(function(r) { return r.id === rowId; });
+  if (!row) return;
+  row.type = newType; row.value = '';
+  delete formErrors['row-' + rowId];
+  renderRows();
+}
+function onValueChange(rowId, val) {
+  var row = rows.find(function(r) { return r.id === rowId; });
+  if (!row) return;
+  row.value = val;
+  if (formErrors['row-' + rowId]) {
+    delete formErrors['row-' + rowId];
+    var errEl = document.getElementById('val-err-' + rowId);
+    var inputEl = document.getElementById('val-input-' + rowId);
+    if (errEl) { errEl.textContent = ''; errEl.classList.remove('show'); }
+    if (inputEl) inputEl.classList.remove('e');
+  }
+}
+function blurRowValue(rowId) {
+  var row = rows.find(function(r) { return r.id === rowId; });
+  if (!row || !row.type) return;
+  var inputEl = document.getElementById('val-input-' + rowId);
+  var errEl = document.getElementById('val-err-' + rowId);
+  if (!row.value.trim()) {
+    var msg = ERR_MSGS[row.type] || '값을 입력해주세요.';
+    formErrors['row-' + rowId] = msg;
+    if (inputEl) inputEl.classList.add('e');
+    if (errEl) { errEl.textContent = msg; errEl.classList.add('show'); }
+  } else {
+    delete formErrors['row-' + rowId];
+    if (inputEl) inputEl.classList.remove('e');
+    if (errEl) { errEl.textContent = ''; errEl.classList.remove('show'); }
+  }
+  updateStateBadge();
+}
+function addOrRow() {
+  if (rows.length >= 3) return;
+  rows.push({ id: nextId++, type: '', value: '' });
+  renderRows();
+}
+function removeRow(rowId) {
+  if (rows.length <= 1) return;
+  rows = rows.filter(function(r) { return r.id !== rowId; });
+  delete formErrors['row-' + rowId];
+  renderRows();
+}
+
+/* ─── Common Handlers ─── */
+function onSwNameInput() {
+  if (document.getElementById('sw-name').value.trim()) {
+    delete formErrors['sw-name'];
+    document.getElementById('sw-name').classList.remove('e');
+    document.getElementById('sw-name-err').classList.remove('show');
+  }
+}
+function blurSwName() {
+  var val = document.getElementById('sw-name').value.trim();
+  var input = document.getElementById('sw-name');
+  var errEl = document.getElementById('sw-name-err');
+  if (!val) {
+    formErrors['sw-name'] = true;
+    input.classList.add('e'); errEl.classList.add('show');
+  } else {
+    delete formErrors['sw-name'];
+    input.classList.remove('e'); errEl.classList.remove('show');
+  }
+  updateStateBadge();
+}
+
+/* ─── macOS Handlers ─── */
+function onMacInput(field, val) {
+  mac[field] = val;
+  if (field === 'bundleId' && val.trim()) {
+    delete formErrors['mac-bundleId'];
+    document.getElementById('bundle-id').classList.remove('e');
+    document.getElementById('bundle-id-err').classList.remove('show');
+    updateStateBadge();
+  }
+}
+function blurMacField(field) {
+  if (field !== 'bundleId') return;
+  var val = mac.bundleId || '';
+  if (!val.trim()) {
+    formErrors['mac-bundleId'] = 'Bundle ID를 입력해주세요.';
+    document.getElementById('bundle-id').classList.add('e');
+    document.getElementById('bundle-id-err').classList.add('show');
+  } else {
+    delete formErrors['mac-bundleId'];
+    document.getElementById('bundle-id').classList.remove('e');
+    document.getElementById('bundle-id-err').classList.remove('show');
+  }
+  updateStateBadge();
+}
+
+/* ─── OS Change ─── */
+function onOsChange(val) {
+  currentOs = val;
+  var detField  = document.getElementById('field-detection');
+  var macFields = document.getElementById('macos-fields');
+
+  if (val === 'macos') {
+    rows.forEach(function(r) { delete formErrors['row-' + r.id]; });
+    detField.style.display = 'none';
+    macFields.style.display = 'block';
+  } else {
+    delete formErrors['mac-bundleId'];
+    detField.style.display = 'block';
+    macFields.style.display = 'none';
+  }
+  updateStateBadge();
+}
+
+/* ─── Submit ─── */
+function handleSubmit() {
+  formErrors = {};
+  var valid = true;
+
+  /* sw-name (공통) */
+  if (!document.getElementById('sw-name').value.trim()) {
+    formErrors['sw-name'] = true; valid = false;
+  }
+  var swInput = document.getElementById('sw-name');
+  var swErr   = document.getElementById('sw-name-err');
+  if (formErrors['sw-name']) { swInput.classList.add('e'); swErr.classList.add('show'); }
+  else { swInput.classList.remove('e'); swErr.classList.remove('show'); }
+
+  if (currentOs === 'windows') {
+    rows.forEach(function(row) {
+      if (!row.type) {
+        formErrors['row-' + row.id] = '탐지 조건 유형을 선택해주세요.'; valid = false;
+      } else if (!row.value.trim()) {
+        formErrors['row-' + row.id] = ERR_MSGS[row.type] || '값을 입력해주세요.'; valid = false;
+      }
+    });
+    renderRows();
+  } else {
+    /* macOS — Bundle ID만 필수, Team ID는 선택 */
+    if (!mac.bundleId.trim()) {
+      formErrors['mac-bundleId'] = 'Bundle ID를 입력해주세요.'; valid = false;
+      document.getElementById('bundle-id').classList.add('e');
+      document.getElementById('bundle-id-err').classList.add('show');
+    } else {
+      document.getElementById('bundle-id').classList.remove('e');
+      document.getElementById('bundle-id-err').classList.remove('show');
+    }
+  }
+
+  if (!valid) {
+    if (formErrors['sw-name']) { document.getElementById('sw-name').focus(); }
+    else if (currentOs === 'windows') {
+      var firstErrRow = rows.find(function(r) { return formErrors['row-' + r.id]; });
+      if (firstErrRow) { var el = document.getElementById('val-input-' + firstErrRow.id); if (el && !el.disabled) el.focus(); }
+    } else if (formErrors['mac-bundleId']) { document.getElementById('bundle-id').focus(); }
+    showToast('입력하지 않은 항목이 있습니다.', 't-err');
+    updateStateBadge('err');
+    return;
+  }
+
+  showToast('소프트웨어가 등록되었습니다.', 't-ok');
+  setTimeout(function() { closeModal(); }, 1100);
+}
+
+function handleCancel() { closeModal(); }
+
+/* ─── Modal open/close ─── */
+function closeModal() {
+  document.getElementById('modal-card').style.display = 'none';
+  document.getElementById('closed-msg').classList.add('show');
+  document.getElementById('state-badge').style.display = 'none';
+  document.getElementById('reopen-btn').classList.add('show');
+  resetForm();
+}
+function reopenModal() {
+  document.getElementById('modal-card').style.display = 'block';
+  document.getElementById('closed-msg').classList.remove('show');
+  document.getElementById('state-badge').style.display = 'flex';
+  document.getElementById('reopen-btn').classList.remove('show');
+  updateStateBadge();
+}
+function resetForm() {
+  rows = [{ id: 1, type: '레지스트리 경로', value: '' }];
+  nextId = 2; formErrors = {};
+  mac = { bundleId: '', teamId: '' };
+  currentOs = 'windows';
+
+  var sw = document.getElementById('sw-name');
+  if (sw) { sw.value = ''; sw.classList.remove('e'); }
+  document.getElementById('sw-name-err').classList.remove('show');
+
+  document.getElementById('bundle-id').value = '';
+  document.getElementById('bundle-id').classList.remove('e');
+  document.getElementById('bundle-id-err').classList.remove('show');
+  document.getElementById('team-id').value = '';
+
+  document.getElementById('os-select').value = 'windows';
+  onOsChange('windows');
+  renderRows();
+}
+
+/* ─── State Badge ─── */
+function updateStateBadge(force) {
+  var textEl = document.getElementById('state-text');
+  var dotEl  = document.getElementById('state-dot');
+  if (!textEl || !dotEl) return;
+  var hasErr = Object.keys(formErrors).length > 0;
+
+  if (force === 'err' || hasErr) {
+    dotEl.className = 'state-dot err';
+    textEl.textContent = '유효성 오류 — 미입력 항목이 있습니다.';
+    return;
+  }
+  if (currentOs === 'macos') {
+    dotEl.className = 'state-dot';
+    textEl.textContent = 'macOS — Bundle ID 필수 / Team ID 선택 입력 상태';
+    return;
+  }
+  var count = rows.length;
+  var types = rows.map(function(r) { return r.type || '미선택'; }).join(' OR ');
+  if (count >= 3) {
+    dotEl.className = 'state-dot warn';
+    textEl.textContent = '탐지 조건 ' + count + '개 최대 도달 — OR 조건 추가 버튼 숨김';
+  } else if (count > 1) {
+    dotEl.className = 'state-dot';
+    textEl.textContent = '탐지 조건 ' + count + '개 — ' + types;
+  } else {
+    dotEl.className = 'state-dot';
+    textEl.textContent = '초기 상태 — Windows / 탐지 조건 1개 (' + types + ' Default)';
+  }
+}
+
+/* ─── Guide Popup ─── */
+function openGuide() {
+  document.getElementById('guide-overlay').classList.add('show');
+}
+function closeGuide() {
+  document.getElementById('guide-overlay').classList.remove('show');
+}
+function closeGuideIfBg(e) {
+  if (e.target === document.getElementById('guide-overlay')) closeGuide();
+}
+
+/* ─── Toast ─── */
+function showToast(msg, cls) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + (cls || '') + ' show';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(function() { t.classList.remove('show'); }, 2500);
+}
+
+/* ─── Init ─── */
+document.addEventListener('DOMContentLoaded', function() { renderRows(); });
+</script>
+</body>
+</html>
