@@ -127,5 +127,22 @@ const PROJECTS_DATA = [
                 "updatedAt": "2026-03-30 00:00"
             }
         ]
+    },
+    {
+        "id": "2026-04-24",
+        "groupTitle": "자산관리 기획 신규 컴포넌트 동작 확인 프로토타입",
+        "date": "2026-04-24",
+        "description": "자산관리 기획 시 신규로 사용된 컴포넌트 또는 화면에 대한 상세 동작 확인 프로토타입입니다.",
+        "items": [
+            {
+                "title": "소프트웨어 자산 수동 등록 팝업",
+                "description": "소프트웨어 자산 등록 시 수동으로 등록하는 화면으로, Windows OS의 소프트웨어 등록 시 상세 동작을 확인할 수 있습니다.",
+                "prototypeUrl": "./prototypes/20260423/software-add_prototype_v1.2_260423.html",
+                "figmaUrl": "https://www.figma.com/design/1igehAViqcqYuJ5PI2nXLT/-%EA%B8%B0%ED%9A%8D-%EB%94%94%EC%9E%90%EC%9D%B8-%ED%95%A9%EB%B3%B8-OK5.0_Admin?node-id=37045-18414&t=VTM38qmJbcLT8Bit-4",
+                "author": "박예은",
+                "updatedAt": "2026-04-24 14:45"
+            },
+
+        ]
     }
 ];
