@@ -58,13 +58,11 @@ Netlify는 monorepo의 사이트별 `netlify.toml`을 찾을 때 Package directo
 기존 사이트는 저장소 루트의 `netlify.toml`을 사용합니다. 아래 환경변수를 설정합니다.
 
 ```text
-GOOGLE_DRIVE_API_KEY
-GOOGLE_DRIVE_FOLDER_ID=1nvXxRHtqv9ibQN-mM46o-NVW_GdhTKq5
 DRIVE_RUNNER_ORIGIN=https://<runner-domain>
-DRIVE_MAX_FILE_BYTES        # 선택
 ```
 
 `DRIVE_RUNNER_ORIGIN`에는 끝의 `/`, 경로, 쿼리 문자열을 넣지 않습니다. 운영에서는 HTTPS만 허용합니다.
+Drive API key와 폴더 ID는 Runner에만 저장합니다. 포털은 Runner의 검증된 목록 API만 호출하므로 Deploy Preview에 비밀키를 노출할 필요가 없습니다.
 
 Netlify 환경변수는 저장소의 `netlify.toml`에 비밀값을 적는 방식이 아니라 Netlify UI/CLI/API로 등록해야 Function 런타임에서 안전하게 사용할 수 있습니다. 참고: [Netlify Functions 환경변수](https://docs.netlify.com/build/functions/environment-variables/)
 
@@ -83,13 +81,13 @@ Netlify 환경변수는 저장소의 `netlify.toml`에 비밀값을 적는 방�
 
 | 증상 | 확인 항목 |
 | --- | --- |
-| Drive 그룹이 보이지 않음 | 포털 Function log, API key·폴더 ID, Drive API 활성화 여부 |
+| Drive 그룹이 보이지 않음 | 포털의 `DRIVE_RUNNER_ORIGIN`, Runner Function log, API key·폴더 ID, Drive API 활성화 여부 |
 | 그룹은 보이나 실행이 503 | Runner 환경변수와 재배포 여부 |
 | 실행이 403 | 파일의 직접 부모 폴더, 확장자, MIME type, 크기 제한 |
 | Google API 403 | API key의 Drive API 활성화·API restriction·할당량 확인 |
 | 외부 CSS/JS가 동작하지 않음 | HTTPS 주소인지, 실행 CSP가 허용하는 리소스인지, 단일 HTML로 인라인 가능한지 |
 
-API key 교체 시 포털과 Runner 두 사이트를 모두 갱신하고 재배포합니다. 사용을 중단할 때는 Google Cloud에서 key를 폐기하고 Netlify의 secret 환경변수를 삭제합니다.
+API key 교체 시 Runner 사이트의 secret만 갱신하고 재배포합니다. 사용을 중단할 때는 Google Cloud에서 key를 폐기하고 Netlify의 secret 환경변수를 삭제합니다.
 
 ## 7. 권한 소유자가 직접 해야 하는 단계
 

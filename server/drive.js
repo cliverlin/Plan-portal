@@ -64,18 +64,27 @@ function getDriveConfig(env = process.env, options = {}) {
   };
 
   if (options.requireRunnerOrigin) {
-    const runnerOrigin = new URL(String(env.DRIVE_RUNNER_ORIGIN).trim());
-    const isLocal = runnerOrigin.hostname === "localhost" || runnerOrigin.hostname === "127.0.0.1";
-    if (runnerOrigin.protocol !== "https:" && !isLocal) {
-      throw new ConfigurationError("DRIVE_RUNNER_ORIGIN은 HTTPS 주소여야 합니다.");
-    }
-    if (runnerOrigin.pathname !== "/" || runnerOrigin.search || runnerOrigin.hash) {
-      throw new ConfigurationError("DRIVE_RUNNER_ORIGIN에는 경로, 쿼리, 해시를 넣을 수 없습니다.");
-    }
-    config.runnerOrigin = runnerOrigin.origin;
+    config.runnerOrigin = getRunnerOrigin(env);
   }
 
   return config;
+}
+
+function getRunnerOrigin(env = process.env) {
+  const rawOrigin = String(env.DRIVE_RUNNER_ORIGIN || "").trim();
+  if (!rawOrigin) {
+    throw new ConfigurationError("필수 환경변수가 없습니다: DRIVE_RUNNER_ORIGIN");
+  }
+
+  const runnerOrigin = new URL(rawOrigin);
+  const isLocal = runnerOrigin.hostname === "localhost" || runnerOrigin.hostname === "127.0.0.1";
+  if (runnerOrigin.protocol !== "https:" && !isLocal) {
+    throw new ConfigurationError("DRIVE_RUNNER_ORIGIN은 HTTPS 주소여야 합니다.");
+  }
+  if (runnerOrigin.pathname !== "/" || runnerOrigin.search || runnerOrigin.hash) {
+    throw new ConfigurationError("DRIVE_RUNNER_ORIGIN에는 경로, 쿼리, 해시를 넣을 수 없습니다.");
+  }
+  return runnerOrigin.origin;
 }
 
 async function getAccessToken(config, fetchImpl = fetch) {
@@ -253,6 +262,7 @@ module.exports = {
   assertValidResourceKey,
   formatKoreanDateTime,
   getDriveConfig,
+  getRunnerOrigin,
   getPublishedHtml,
   isPublishableHtml,
   listPublishedHtml,

@@ -5,7 +5,7 @@
 ## 동작 방식
 
 1. 게시 담당자가 승인된 Google Drive 폴더의 **바로 아래**에 단일 `.html` 파일을 업로드합니다.
-2. 포털의 Netlify Function이 Drive 목록을 읽고 `Google Drive 게시 프로토타입` 그룹을 자동 생성합니다.
+2. Runner의 Netlify Function이 Drive 목록을 읽고, 포털은 이 안전한 목록을 받아 `Google Drive 게시 프로토타입` 그룹을 자동 생성합니다.
 3. 사용자가 `프로토타입 보기`를 누르면 `target="_blank"`와 `noopener noreferrer`로 독립된 새 탭이 열립니다.
 4. HTML은 포털 출처가 아닌 별도 Runner Netlify 사이트에서 내려받습니다. Runner는 파일 ID를 다시 조회하여 승인 폴더의 직접 하위 HTML인지 검증한 뒤에만 실행합니다.
 
@@ -40,8 +40,8 @@ test/                           서버 로직과 보안 헤더 테스트
 
 | 변수 | 포털 | Runner | 설명 |
 | --- | :---: | :---: | --- |
-| `GOOGLE_DRIVE_API_KEY` | 필요 | 필요 | 공개 폴더 목록·파일 조회용 서버 측 API key |
-| `GOOGLE_DRIVE_FOLDER_ID` | 필요 | 필요 | `1nvXxRHtqv9ibQN-mM46o-NVW_GdhTKq5` |
+| `GOOGLE_DRIVE_API_KEY` | 불필요 | 필요 | 공개 폴더 목록·파일 조회용 서버 측 API key |
+| `GOOGLE_DRIVE_FOLDER_ID` | 불필요 | 필요 | `1nvXxRHtqv9ibQN-mM46o-NVW_GdhTKq5` |
 | `DRIVE_RUNNER_ORIGIN` | 필요 | 불필요 | Runner의 HTTPS origin, 예: `https://ok-plan-runner.netlify.app` |
 | `DRIVE_MAX_FILE_BYTES` | 선택 | 선택 | 단일 HTML 최대 크기, 기본 5 MiB |
 

@@ -16,6 +16,7 @@ const {
   SECURITY_HEADERS,
   createHandler: createRenderHandler,
 } = require("../runner/netlify/functions/render");
+const { createHandler: createRunnerListHandler } = require("../runner/netlify/functions/projects");
 
 const ENV = {
   GOOGLE_OAUTH_CLIENT_ID: "client-id",
@@ -241,11 +242,58 @@ test("renders a public HTML file using only the server-side API key", async () =
   assert.match(response.body, /Public/);
 });
 
-test("list endpoint returns a safe error when configuration is absent", async () => {
+test("portal list endpoint returns a safe error when configuration is absent", async () => {
   const handler = createListHandler({ env: {}, fetchImpl: async () => assert.fail("must not fetch") });
   const response = await handler({ httpMethod: "GET" });
   assert.equal(response.statusCode, 503);
   assert.doesNotMatch(response.body, /client secret|refresh token/i);
+});
+
+test("portal list endpoint proxies the runner without Drive credentials", async () => {
+  const requests = [];
+  const fetchImpl = sequenceFetch([
+    jsonResponse({
+      files: [{
+        id: "public_file_123",
+        name: "public.html",
+        modifiedTime: "2026-09-22T15:30:00Z",
+        description: "Public prototype",
+        resourceKey: "resource_key_123",
+      }],
+    }),
+  ], requests);
+  const handler = createListHandler({
+    env: { DRIVE_RUNNER_ORIGIN: "https://runner.example.com" },
+    fetchImpl,
+  });
+  const response = await handler({ httpMethod: "GET", headers: { host: "portal.example.com" } });
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(requests[0].url, "https://runner.example.com/.netlify/functions/projects");
+  assert.match(response.body, /public_file_123/);
+  assert.match(response.body, /https:\/\/runner\.example\.com\/\.netlify\/functions\/render/);
+});
+
+test("runner list endpoint reads Drive with the server-side key", async () => {
+  const fetchImpl = sequenceFetch([
+    jsonResponse({
+      files: [{
+        id: "public_file_123",
+        name: "public.html",
+        mimeType: "text/html",
+        size: "120",
+        modifiedTime: "2026-09-22T15:30:00Z",
+        parents: [PUBLIC_ENV.GOOGLE_DRIVE_FOLDER_ID],
+        trashed: false,
+      }],
+    }),
+  ]);
+  const handler = createRunnerListHandler({ env: PUBLIC_ENV, fetchImpl });
+  const response = await handler({ httpMethod: "GET" });
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(JSON.parse(response.body).files.map((file) => file.id), ["public_file_123"]);
+  assert.doesNotMatch(response.body, /public-folder-api-key/);
 });
 
 test("list endpoint refuses to use the portal origin as the runner origin", async () => {
