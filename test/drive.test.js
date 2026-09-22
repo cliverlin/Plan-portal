@@ -26,6 +26,13 @@ const ENV = {
   DRIVE_MAX_FILE_BYTES: "1024",
 };
 
+const PUBLIC_ENV = {
+  GOOGLE_DRIVE_API_KEY: "public-folder-api-key",
+  GOOGLE_DRIVE_FOLDER_ID: "1nvXxRHtqv9ibQN-mM46o-NVW_GdhTKq5",
+  DRIVE_RUNNER_ORIGIN: "https://runner.example.com",
+  DRIVE_MAX_FILE_BYTES: "1024",
+};
+
 function jsonResponse(payload, init = {}) {
   return new Response(JSON.stringify(payload), {
     status: init.status || 200,
@@ -42,15 +49,45 @@ function sequenceFetch(responses, requests = []) {
   };
 }
 
-test("requires server-side OAuth and approved folder settings", () => {
+test("requires a server-side API key or OAuth and approved folder settings", () => {
   assert.throws(
     () => getDriveConfig({}, { requireRunnerOrigin: true }),
-    /GOOGLE_OAUTH_CLIENT_ID/
+    /GOOGLE_DRIVE_FOLDER_ID/
   );
   assert.throws(
     () => getDriveConfig({ ...ENV, DRIVE_RUNNER_ORIGIN: "http://example.com" }, { requireRunnerOrigin: true }),
     /HTTPS/
   );
+});
+
+test("lists a public folder with an API key and no OAuth token exchange", async () => {
+  const requests = [];
+  const fetchImpl = sequenceFetch(
+    [
+      jsonResponse({
+        files: [
+          {
+            id: "public_file_123",
+            name: "public.html",
+            mimeType: "text/html",
+            size: "120",
+            modifiedTime: "2026-09-22T15:30:00Z",
+            parents: [PUBLIC_ENV.GOOGLE_DRIVE_FOLDER_ID],
+            trashed: false,
+            resourceKey: "resource_key_123",
+          },
+        ],
+      }),
+    ],
+    requests
+  );
+
+  const config = getDriveConfig(PUBLIC_ENV, { requireRunnerOrigin: true });
+  const files = await listPublishedHtml(config, fetchImpl);
+  assert.equal(config.authMode, "api-key");
+  assert.deepEqual(files.map((file) => file.id), ["public_file_123"]);
+  assert.match(requests[0].url, /key=public-folder-api-key/);
+  assert.equal(requests[0].init.headers.authorization, undefined);
 });
 
 test("lists only direct, non-trashed HTML files in the approved folder", async () => {
@@ -107,12 +144,16 @@ test("builds runner links without exposing Drive credentials", () => {
         id: "valid_file_123",
         name: "prototype.html",
         modifiedTime: "2026-09-22T15:30:00Z",
+        resourceKey: "resource_key_123",
       },
     ],
     config
   );
 
-  assert.equal(project.items[0].prototypeUrl, "https://runner.example.com/view/valid_file_123");
+  assert.equal(
+    project.items[0].prototypeUrl,
+    "https://runner.example.com/view/valid_file_123?resourceKey=resource_key_123"
+  );
   assert.equal(project.items[0].updatedAt, "2026-09-23 00:30");
   assert.doesNotMatch(JSON.stringify(project), /client-secret|refresh-token/);
 });
@@ -160,6 +201,41 @@ test("renders approved HTML with isolated execution headers", async () => {
   assert.match(SECURITY_HEADERS["content-security-policy"], /sandbox/);
   assert.match(SECURITY_HEADERS["content-security-policy"], /frame-ancestors 'none'/);
   assert.equal(SECURITY_HEADERS["x-frame-options"], "DENY");
+});
+
+test("renders a public HTML file using only the server-side API key", async () => {
+  const requests = [];
+  const fetchImpl = sequenceFetch(
+    [
+      jsonResponse({
+        id: "public_file_123",
+        name: "public.html",
+        mimeType: "text/html",
+        size: "45",
+        parents: [PUBLIC_ENV.GOOGLE_DRIVE_FOLDER_ID],
+        trashed: false,
+        resourceKey: "resource_key_123",
+      }),
+      new Response("<!doctype html><title>Public</title>", { status: 200 }),
+    ],
+    requests
+  );
+  const handler = createRenderHandler({ env: PUBLIC_ENV, fetchImpl });
+  const response = await handler({
+    httpMethod: "GET",
+    queryStringParameters: {
+      id: "public_file_123",
+      resourceKey: "resource_key_123",
+    },
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.match(requests[0].url, /key=public-folder-api-key/);
+  assert.equal(
+    requests[0].init.headers["x-goog-drive-resource-keys"],
+    "public_file_123/resource_key_123"
+  );
+  assert.match(response.body, /Public/);
 });
 
 test("list endpoint returns a safe error when configuration is absent", async () => {

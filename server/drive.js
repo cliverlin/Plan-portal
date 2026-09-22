@@ -25,12 +25,7 @@ class DriveRequestError extends Error {
 }
 
 function getDriveConfig(env = process.env, options = {}) {
-  const required = [
-    "GOOGLE_OAUTH_CLIENT_ID",
-    "GOOGLE_OAUTH_CLIENT_SECRET",
-    "GOOGLE_OAUTH_REFRESH_TOKEN",
-    "GOOGLE_DRIVE_FOLDER_ID",
-  ];
+  const required = ["GOOGLE_DRIVE_FOLDER_ID"];
 
   if (options.requireRunnerOrigin) required.push("DRIVE_RUNNER_ORIGIN");
 
@@ -44,10 +39,23 @@ function getDriveConfig(env = process.env, options = {}) {
     throw new ConfigurationError("DRIVE_MAX_FILE_BYTES는 양의 정수여야 합니다.");
   }
 
+  const apiKey = String(env.GOOGLE_DRIVE_API_KEY || "").trim();
+  const oauth = {
+    clientId: String(env.GOOGLE_OAUTH_CLIENT_ID || "").trim(),
+    clientSecret: String(env.GOOGLE_OAUTH_CLIENT_SECRET || "").trim(),
+    refreshToken: String(env.GOOGLE_OAUTH_REFRESH_TOKEN || "").trim(),
+  };
+  const hasCompleteOauth = Object.values(oauth).every(Boolean);
+  if (!apiKey && !hasCompleteOauth) {
+    throw new ConfigurationError(
+      "공개 폴더용 GOOGLE_DRIVE_API_KEY 또는 OAuth 환경변수 3개가 필요합니다."
+    );
+  }
+
   const config = {
-    clientId: String(env.GOOGLE_OAUTH_CLIENT_ID).trim(),
-    clientSecret: String(env.GOOGLE_OAUTH_CLIENT_SECRET).trim(),
-    refreshToken: String(env.GOOGLE_OAUTH_REFRESH_TOKEN).trim(),
+    authMode: apiKey ? "api-key" : "oauth",
+    apiKey,
+    ...oauth,
     folderId: String(env.GOOGLE_DRIVE_FOLDER_ID).trim(),
     maxFileBytes,
   };
@@ -68,6 +76,8 @@ function getDriveConfig(env = process.env, options = {}) {
 }
 
 async function getAccessToken(config, fetchImpl = fetch) {
+  if (config.authMode === "api-key") return null;
+
   const body = new URLSearchParams({
     client_id: config.clientId,
     client_secret: config.clientSecret,
@@ -111,10 +121,19 @@ function isPublishableHtml(file, config) {
   );
 }
 
-async function driveFetch(path, accessToken, fetchImpl = fetch) {
-  const response = await fetchImpl(`${DRIVE_API_BASE}${path}`, {
-    headers: { authorization: `Bearer ${accessToken}` },
-  });
+async function driveFetch(path, config, accessToken, fetchImpl = fetch, resourceKey = "") {
+  const url = new URL(`${DRIVE_API_BASE}${path}`);
+  const headers = {};
+  if (config.authMode === "api-key") {
+    url.searchParams.set("key", config.apiKey);
+  } else {
+    headers.authorization = `Bearer ${accessToken}`;
+  }
+  if (resourceKey) {
+    headers["x-goog-drive-resource-keys"] = `${url.pathname.split("/").at(-1)}/${resourceKey}`;
+  }
+
+  const response = await fetchImpl(url, { headers });
   if (!response.ok) {
     const status = response.status === 404 ? 404 : 502;
     throw new DriveRequestError("Google Drive에서 파일을 읽지 못했습니다.", status);
@@ -128,10 +147,12 @@ async function listPublishedHtml(config, fetchImpl = fetch) {
     q: `'${escapeDriveQueryValue(config.folderId)}' in parents and trashed = false`,
     orderBy: "modifiedTime desc,name",
     pageSize: "1000",
-    fields: "files(id,name,mimeType,size,modifiedTime,createdTime,description,parents,trashed)",
+    fields: "files(id,name,mimeType,size,modifiedTime,createdTime,description,parents,trashed,resourceKey)",
     spaces: "drive",
+    supportsAllDrives: "true",
+    includeItemsFromAllDrives: "true",
   });
-  const response = await driveFetch(`/files?${params}`, accessToken, fetchImpl);
+  const response = await driveFetch(`/files?${params}`, config, accessToken, fetchImpl);
   const payload = await response.json();
   return (Array.isArray(payload.files) ? payload.files : []).filter((file) =>
     isPublishableHtml(file, config)
@@ -144,14 +165,23 @@ function assertValidFileId(fileId) {
   }
 }
 
-async function getPublishedHtml(fileId, config, fetchImpl = fetch) {
+function assertValidResourceKey(resourceKey) {
+  if (resourceKey && !/^[A-Za-z0-9_-]{5,200}$/.test(String(resourceKey))) {
+    throw new DriveRequestError("올바르지 않은 resource key입니다.", 400);
+  }
+}
+
+async function getPublishedHtml(fileId, config, fetchImpl = fetch, resourceKey = "") {
   assertValidFileId(fileId);
+  assertValidResourceKey(resourceKey);
   const accessToken = await getAccessToken(config, fetchImpl);
-  const fields = "id,name,mimeType,size,modifiedTime,parents,trashed";
+  const fields = "id,name,mimeType,size,modifiedTime,parents,trashed,resourceKey";
   const metadataResponse = await driveFetch(
-    `/files/${encodeURIComponent(fileId)}?fields=${encodeURIComponent(fields)}`,
+    `/files/${encodeURIComponent(fileId)}?fields=${encodeURIComponent(fields)}&supportsAllDrives=true`,
+    config,
     accessToken,
-    fetchImpl
+    fetchImpl,
+    resourceKey
   );
   const metadata = await metadataResponse.json();
 
@@ -160,9 +190,11 @@ async function getPublishedHtml(fileId, config, fetchImpl = fetch) {
   }
 
   const contentResponse = await driveFetch(
-    `/files/${encodeURIComponent(fileId)}?alt=media`,
+    `/files/${encodeURIComponent(fileId)}?alt=media&supportsAllDrives=true`,
+    config,
     accessToken,
-    fetchImpl
+    fetchImpl,
+    resourceKey || metadata.resourceKey
   );
   const content = await contentResponse.text();
   if (Buffer.byteLength(content, "utf8") > config.maxFileBytes) {
@@ -185,7 +217,9 @@ function toPortalProject(files, config) {
     items: files.map((file) => ({
       title: file.name.replace(/\.html?$/i, ""),
       description: file.description || "Google Drive 게시 폴더에서 자동 등록된 프로토타입",
-      prototypeUrl: `${config.runnerOrigin}/view/${encodeURIComponent(file.id)}`,
+      prototypeUrl: `${config.runnerOrigin}/view/${encodeURIComponent(file.id)}${
+        file.resourceKey ? `?resourceKey=${encodeURIComponent(file.resourceKey)}` : ""
+      }`,
       filename: file.name,
       updatedAt: formatKoreanDateTime(file.modifiedTime),
       source: "google-drive",
@@ -213,6 +247,7 @@ module.exports = {
   ConfigurationError,
   DriveRequestError,
   assertValidFileId,
+  assertValidResourceKey,
   formatKoreanDateTime,
   getDriveConfig,
   getPublishedHtml,

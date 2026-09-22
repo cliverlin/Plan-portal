@@ -13,8 +13,8 @@
 
 ## 보안 경계
 
-- OAuth client secret, refresh token, 폴더 ID는 Netlify Function 환경변수에만 저장하며 브라우저 응답에 포함하지 않습니다.
-- 읽기 전용 OAuth 범위(`https://www.googleapis.com/auth/drive.readonly`)만 사용합니다.
+- 공개 폴더 조회용 Google Drive API key는 Netlify Function 환경변수에만 저장하며 브라우저 응답에 포함하지 않습니다.
+- API key는 Google Drive API로만 제한하고 파일 수정 권한은 부여하지 않습니다. 비공개 폴더로 전환할 때만 읽기 전용 OAuth를 선택적으로 사용할 수 있습니다.
 - 목록과 실행 시점 모두 `GOOGLE_DRIVE_FOLDER_ID`의 직접 하위 파일인지 확인합니다.
 - `.html`/`.htm`, 허용 MIME type, 삭제 여부, 최대 파일 크기를 모두 검사합니다.
 - 실행 사이트는 포털과 다른 origin이어야 합니다. 실행 응답에는 CSP `sandbox`(same-origin 권한 없음), `frame-ancestors 'none'`, `X-Frame-Options: DENY`, `no-store`, `no-referrer`를 적용합니다.
@@ -30,7 +30,7 @@ data/projects.js                저장소에 포함된 기존 프로토타입 �
 netlify/functions/              포털의 Drive 목록 API
 runner/                         별도 출처로 배포할 HTML 실행 사이트
 scripts/build-portal.js         공개 파일만 dist에 복사하는 빌드
-server/drive.js                 OAuth, Drive 조회, 폴더 검증 공통 로직
+server/drive.js                 Drive 인증·조회·폴더 검증 공통 로직
 test/                           서버 로직과 보안 헤더 테스트
 ```
 
@@ -40,12 +40,12 @@ test/                           서버 로직과 보안 헤더 테스트
 
 | 변수 | 포털 | Runner | 설명 |
 | --- | :---: | :---: | --- |
-| `GOOGLE_OAUTH_CLIENT_ID` | 필요 | 필요 | Google OAuth 웹 애플리케이션 client ID |
-| `GOOGLE_OAUTH_CLIENT_SECRET` | 필요 | 필요 | 서버 전용 client secret |
-| `GOOGLE_OAUTH_REFRESH_TOKEN` | 필요 | 필요 | `drive.readonly`와 offline access로 발급한 refresh token |
-| `GOOGLE_DRIVE_FOLDER_ID` | 필요 | 필요 | 승인된 게시 폴더 ID |
+| `GOOGLE_DRIVE_API_KEY` | 필요 | 필요 | 공개 폴더 목록·파일 조회용 서버 측 API key |
+| `GOOGLE_DRIVE_FOLDER_ID` | 필요 | 필요 | `1nvXxRHtqv9ibQN-mM46o-NVW_GdhTKq5` |
 | `DRIVE_RUNNER_ORIGIN` | 필요 | 불필요 | Runner의 HTTPS origin, 예: `https://ok-plan-runner.netlify.app` |
 | `DRIVE_MAX_FILE_BYTES` | 선택 | 선택 | 단일 HTML 최대 크기, 기본 5 MiB |
+
+현재 공개 폴더 운영에는 위 네 변수만 사용합니다. 코드는 추후 폴더를 비공개로 바꿀 경우를 위해 `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REFRESH_TOKEN` 조합도 대체 인증 방식으로 지원합니다.
 
 Netlify UI의 **Project configuration → Environment variables**에서 등록하고, 가능한 플랜에서는 scope를 Functions로 제한하며 secret 값으로 표시하세요. 환경변수 변경 뒤에는 다시 배포해야 Function에 적용됩니다.
 
@@ -68,4 +68,4 @@ npm test
 - Runner Netlify 사이트: 같은 저장소를 두 번째 사이트로 연결하고 Package directory를 `runner`, Base directory는 비워 저장소 루트를 유지합니다. `runner/netlify.toml`이 적용되는지 Deploy log에서 확인합니다.
 - 두 사이트에 필요한 환경변수를 각각 넣은 뒤 Runner를 먼저 배포하고, 확정된 Runner HTTPS origin을 포털의 `DRIVE_RUNNER_ORIGIN`에 등록해 포털을 다시 배포합니다.
 
-실제 Google 동의, Netlify 환경변수 입력, 두 사이트의 production deploy는 계정 소유자 권한이 필요한 수동 단계입니다.
+Google Cloud API key 생성, Netlify 환경변수 입력, 두 사이트의 production deploy는 계정 소유자 권한이 필요한 수동 단계입니다. 현재처럼 공개 폴더를 사용하면 Google OAuth 동의는 필요하지 않습니다.

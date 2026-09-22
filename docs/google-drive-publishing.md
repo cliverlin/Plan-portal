@@ -5,27 +5,29 @@
 - 승인된 개인 Google Drive 게시 폴더 1개
 - 기존 포털 Netlify 사이트
 - HTML 실행 전용으로 새로 만들 Runner Netlify 사이트
-- 한 번의 Google OAuth 동의를 수행할 Drive 계정
+- Google Drive API가 활성화된 Google Cloud 프로젝트와 API key
 
 폴더 URL이 `https://drive.google.com/drive/folders/ABC123...`라면 `ABC123...` 부분이 `GOOGLE_DRIVE_FOLDER_ID`입니다. 하위 폴더는 탐색하지 않습니다. 게시자는 승인 폴더 바로 아래에 파일을 올려야 합니다.
 
-## 2. Google Cloud와 OAuth 준비
+현재 게시 폴더 ID:
+
+```text
+1nvXxRHtqv9ibQN-mM46o-NVW_GdhTKq5
+```
+
+이 폴더는 비로그인 사용자에게도 HTML 파일 목록이 보이는 공개 뷰어 폴더로 확인되었습니다.
+
+## 2. Google Cloud API key 준비
 
 1. Google Cloud Console에서 프로젝트를 만들거나 기존 프로젝트를 선택합니다.
 2. Google Drive API를 활성화합니다.
-3. OAuth consent screen을 설정하고 게시 담당 Google 계정을 허용합니다.
-4. OAuth client type을 Web application으로 생성합니다.
-5. 다음 범위와 `access_type=offline`, `prompt=consent`를 사용하여 authorization code flow를 한 번 완료합니다.
+3. **APIs & Services → Credentials → Create credentials → API key**를 선택합니다.
+4. 생성된 key의 API restrictions를 **Google Drive API**로 제한합니다.
+5. 이 key를 GitHub나 문서에 적지 말고 Netlify의 `GOOGLE_DRIVE_API_KEY` secret으로 저장합니다.
 
-```text
-https://www.googleapis.com/auth/drive.readonly
-```
+공개 폴더는 Google OAuth 로그인이나 refresh token 없이 API key로 목록을 조회할 수 있습니다. API key 자체에는 파일 수정·삭제 권한이 없습니다. 다만 무단 사용 방지를 위해 Google Drive API로 사용 범위를 제한하고 Netlify 서버에만 저장합니다.
 
-이 범위는 수동 업로드된 파일의 본문까지 읽기 위해 필요합니다. `drive.file`은 앱이 생성했거나 사용자가 앱을 통해 선택한 파일 중심이라, Drive 폴더에 직접 업로드하는 이번 운영 방식에는 적합하지 않습니다. `drive.readonly`는 제한된 범위이므로 조직 외 다수 사용자에게 앱을 공개할 경우 Google의 검증 또는 보안 평가가 필요할 수 있습니다. 개인/제한 운영에서도 consent screen의 테스트 사용자, 앱 게시 상태, refresh token 만료 정책을 먼저 확인하세요.
-
-발급받은 client ID, client secret, refresh token은 채팅·문서·GitHub issue에 남기지 말고 Netlify secret 환경변수로만 입력합니다. 토큰이 노출되면 Google 계정의 연결된 앱에서 즉시 철회하고 새로 발급합니다.
-
-참고: [Google server-side OAuth](https://developers.google.com/identity/protocols/oauth2/web-server), [Drive API scope 안내](https://developers.google.com/workspace/drive/api/guides/api-specific-auth)
+참고: [Google Drive의 공개 폴더 목록 조회](https://developers.google.com/workspace/drive/api/guides/search-files#list_files_in_a_public_folder)
 
 ## 3. Runner 사이트 배포
 
@@ -42,10 +44,8 @@ https://www.googleapis.com/auth/drive.readonly
 Runner 사이트에 다음 환경변수를 넣습니다.
 
 ```text
-GOOGLE_OAUTH_CLIENT_ID
-GOOGLE_OAUTH_CLIENT_SECRET
-GOOGLE_OAUTH_REFRESH_TOKEN
-GOOGLE_DRIVE_FOLDER_ID
+GOOGLE_DRIVE_API_KEY
+GOOGLE_DRIVE_FOLDER_ID=1nvXxRHtqv9ibQN-mM46o-NVW_GdhTKq5
 DRIVE_MAX_FILE_BYTES        # 선택
 ```
 
@@ -58,10 +58,8 @@ Netlify는 monorepo의 사이트별 `netlify.toml`을 찾을 때 Package directo
 기존 사이트는 저장소 루트의 `netlify.toml`을 사용합니다. 아래 환경변수를 설정합니다.
 
 ```text
-GOOGLE_OAUTH_CLIENT_ID
-GOOGLE_OAUTH_CLIENT_SECRET
-GOOGLE_OAUTH_REFRESH_TOKEN
-GOOGLE_DRIVE_FOLDER_ID
+GOOGLE_DRIVE_API_KEY
+GOOGLE_DRIVE_FOLDER_ID=1nvXxRHtqv9ibQN-mM46o-NVW_GdhTKq5
 DRIVE_RUNNER_ORIGIN=https://<runner-domain>
 DRIVE_MAX_FILE_BYTES        # 선택
 ```
@@ -85,20 +83,20 @@ Netlify 환경변수는 저장소의 `netlify.toml`에 비밀값을 적는 방�
 
 | 증상 | 확인 항목 |
 | --- | --- |
-| Drive 그룹이 보이지 않음 | 포털 Function log, 네 환경변수, Drive API 활성화, refresh token 상태 |
+| Drive 그룹이 보이지 않음 | 포털 Function log, API key·폴더 ID, Drive API 활성화 여부 |
 | 그룹은 보이나 실행이 503 | Runner 환경변수와 재배포 여부 |
 | 실행이 403 | 파일의 직접 부모 폴더, 확장자, MIME type, 크기 제한 |
-| `invalid_grant` | refresh token 철회/만료 여부, OAuth 앱 게시 상태, 테스트 사용자 |
+| Google API 403 | API key의 Drive API 활성화·API restriction·할당량 확인 |
 | 외부 CSS/JS가 동작하지 않음 | HTTPS 주소인지, 실행 CSP가 허용하는 리소스인지, 단일 HTML로 인라인 가능한지 |
 
-토큰 교체 시 포털과 Runner 두 사이트를 모두 갱신하고 재배포합니다. 사용을 중단할 때는 Google 계정에서 OAuth 권한을 철회하고 Netlify의 secret 환경변수를 삭제합니다.
+API key 교체 시 포털과 Runner 두 사이트를 모두 갱신하고 재배포합니다. 사용을 중단할 때는 Google Cloud에서 key를 폐기하고 Netlify의 secret 환경변수를 삭제합니다.
 
 ## 7. 권한 소유자가 직접 해야 하는 단계
 
-- Google Cloud 프로젝트/consent screen/OAuth client 생성
-- `drive.readonly` 동의 및 refresh token 발급
+- Google Cloud 프로젝트에서 Drive API 활성화 및 API key 생성
+- API key를 Google Drive API 전용으로 제한
 - 게시용 Drive 폴더 선택과 회사 자료 승인 정책 확인
 - Netlify Runner 사이트 생성, 환경변수 secret 등록, production deploy
 - 기존 포털 production deploy 및 도메인/접근 정책 확인
 
-코드 변경과 자동 테스트만으로 위 계정 권한 작업을 대신할 수는 없습니다.
+현재 공개 폴더 구성에서는 OAuth 동의나 Google 로그인 연결이 필요하지 않습니다. 코드 변경과 자동 테스트만으로 Google Cloud key 생성 및 Netlify secret 입력 작업을 대신할 수는 없습니다.
