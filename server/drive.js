@@ -189,6 +189,17 @@ async function getPublishedHtml(fileId, config, fetchImpl = fetch, resourceKey =
   const metadata = await metadataResponse.json();
 
   if (!isPublishableHtml(metadata, config)) {
+    console.warn("Rejected Drive file metadata", {
+      extensionAllowed: /\.html?$/i.test(metadata.name || ""),
+      mimeAllowed: HTML_MIME_TYPES.has(metadata.mimeType),
+      parentAllowed:
+        Array.isArray(metadata.parents) && metadata.parents.includes(config.folderId),
+      sizeAllowed:
+        Number.isFinite(Number(metadata.size)) &&
+        Number(metadata.size) > 0 &&
+        Number(metadata.size) <= config.maxFileBytes,
+      trashed: Boolean(metadata.trashed),
+    });
     throw new DriveRequestError("이 파일은 승인된 게시 폴더의 HTML이 아닙니다.", 403);
   }
 
