@@ -152,7 +152,7 @@ test("builds runner links without exposing Drive credentials", () => {
 
   assert.equal(
     project.items[0].prototypeUrl,
-    "https://runner.example.com/view/valid_file_123?resourceKey=resource_key_123"
+    "https://runner.example.com/.netlify/functions/render?id=valid_file_123&resourceKey=resource_key_123"
   );
   assert.equal(project.items[0].updatedAt, "2026-09-23 00:30");
   assert.doesNotMatch(JSON.stringify(project), /client-secret|refresh-token/);
@@ -181,12 +181,14 @@ test("renders approved HTML with isolated execution headers", async () => {
   const fetchImpl = sequenceFetch([
     jsonResponse({ access_token: "access-token" }),
     jsonResponse({
-      id: "valid_file_123",
-      name: "approved.html",
-      mimeType: "text/html",
-      size: "45",
-      parents: ["approved-folder"],
-      trashed: false,
+      files: [{
+        id: "valid_file_123",
+        name: "approved.html",
+        mimeType: "text/html",
+        size: "45",
+        parents: ["approved-folder"],
+        trashed: false,
+      }],
     }),
     new Response("<!doctype html><title>Approved</title>", { status: 200 }),
   ]);
@@ -208,13 +210,14 @@ test("renders a public HTML file using only the server-side API key", async () =
   const fetchImpl = sequenceFetch(
     [
       jsonResponse({
-        id: "public_file_123",
-        name: "public.html",
-        mimeType: "text/plain",
-        size: "45",
-        parents: [PUBLIC_ENV.GOOGLE_DRIVE_FOLDER_ID],
-        trashed: false,
-        resourceKey: "resource_key_123",
+        files: [{
+          id: "public_file_123",
+          name: "public.html",
+          mimeType: "text/plain",
+          size: "45",
+          trashed: false,
+          resourceKey: "resource_key_123",
+        }],
       }),
       new Response("<!doctype html><title>Public</title>", { status: 200 }),
     ],
@@ -232,7 +235,7 @@ test("renders a public HTML file using only the server-side API key", async () =
   assert.equal(response.statusCode, 200);
   assert.match(requests[0].url, /key=public-folder-api-key/);
   assert.equal(
-    requests[0].init.headers["x-goog-drive-resource-keys"],
+    requests[1].init.headers["x-goog-drive-resource-keys"],
     "public_file_123/resource_key_123"
   );
   assert.match(response.body, /Public/);

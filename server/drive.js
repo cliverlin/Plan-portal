@@ -109,13 +109,16 @@ function escapeDriveQueryValue(value) {
   return String(value).replaceAll("\\", "\\\\").replaceAll("'", "\\'");
 }
 
-function isPublishableHtml(file, config) {
+function isPublishableHtml(file, config, options = {}) {
   const size = Number(file.size || 0);
+  const hasVisibleParents = Array.isArray(file.parents) && file.parents.length > 0;
+  const isInApprovedFolder = hasVisibleParents
+    ? file.parents.includes(config.folderId)
+    : Boolean(options.folderQueryVerified);
   return Boolean(
     file &&
       !file.trashed &&
-      Array.isArray(file.parents) &&
-      file.parents.includes(config.folderId) &&
+      isInApprovedFolder &&
       /\.html?$/i.test(file.name || "") &&
       HTML_MIME_TYPES.has(file.mimeType) &&
       Number.isFinite(size) &&
@@ -144,8 +147,7 @@ async function driveFetch(path, config, accessToken, fetchImpl = fetch, resource
   return response;
 }
 
-async function listPublishedHtml(config, fetchImpl = fetch) {
-  const accessToken = await getAccessToken(config, fetchImpl);
+async function listFolderHtml(config, accessToken, fetchImpl = fetch) {
   const params = new URLSearchParams({
     q: `'${escapeDriveQueryValue(config.folderId)}' in parents and trashed = false`,
     orderBy: "modifiedTime desc,name",
@@ -158,8 +160,13 @@ async function listPublishedHtml(config, fetchImpl = fetch) {
   const response = await driveFetch(`/files?${params}`, config, accessToken, fetchImpl);
   const payload = await response.json();
   return (Array.isArray(payload.files) ? payload.files : []).filter((file) =>
-    isPublishableHtml(file, config)
+    isPublishableHtml(file, config, { folderQueryVerified: true })
   );
+}
+
+async function listPublishedHtml(config, fetchImpl = fetch) {
+  const accessToken = await getAccessToken(config, fetchImpl);
+  return listFolderHtml(config, accessToken, fetchImpl);
 }
 
 function assertValidFileId(fileId) {
@@ -178,28 +185,10 @@ async function getPublishedHtml(fileId, config, fetchImpl = fetch, resourceKey =
   assertValidFileId(fileId);
   assertValidResourceKey(resourceKey);
   const accessToken = await getAccessToken(config, fetchImpl);
-  const fields = "id,name,mimeType,size,modifiedTime,parents,trashed,resourceKey";
-  const metadataResponse = await driveFetch(
-    `/files/${encodeURIComponent(fileId)}?fields=${encodeURIComponent(fields)}&supportsAllDrives=true`,
-    config,
-    accessToken,
-    fetchImpl,
-    resourceKey
-  );
-  const metadata = await metadataResponse.json();
+  const approvedFiles = await listFolderHtml(config, accessToken, fetchImpl);
+  const metadata = approvedFiles.find((file) => file.id === fileId);
 
-  if (!isPublishableHtml(metadata, config)) {
-    console.warn("Rejected Drive file metadata", {
-      extensionAllowed: /\.html?$/i.test(metadata.name || ""),
-      mimeAllowed: HTML_MIME_TYPES.has(metadata.mimeType),
-      parentAllowed:
-        Array.isArray(metadata.parents) && metadata.parents.includes(config.folderId),
-      sizeAllowed:
-        Number.isFinite(Number(metadata.size)) &&
-        Number(metadata.size) > 0 &&
-        Number(metadata.size) <= config.maxFileBytes,
-      trashed: Boolean(metadata.trashed),
-    });
+  if (!metadata) {
     throw new DriveRequestError("이 파일은 승인된 게시 폴더의 HTML이 아닙니다.", 403);
   }
 
@@ -231,8 +220,8 @@ function toPortalProject(files, config) {
     items: files.map((file) => ({
       title: file.name.replace(/\.html?$/i, ""),
       description: file.description || "Google Drive 게시 폴더에서 자동 등록된 프로토타입",
-      prototypeUrl: `${config.runnerOrigin}/view/${encodeURIComponent(file.id)}${
-        file.resourceKey ? `?resourceKey=${encodeURIComponent(file.resourceKey)}` : ""
+      prototypeUrl: `${config.runnerOrigin}/.netlify/functions/render?id=${encodeURIComponent(file.id)}${
+        file.resourceKey ? `&resourceKey=${encodeURIComponent(file.resourceKey)}` : ""
       }`,
       filename: file.name,
       updatedAt: formatKoreanDateTime(file.modifiedTime),

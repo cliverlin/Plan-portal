@@ -49,7 +49,7 @@ GOOGLE_DRIVE_FOLDER_ID=1nvXxRHtqv9ibQN-mM46o-NVW_GdhTKq5
 DRIVE_MAX_FILE_BYTES        # 선택
 ```
 
-배포 후 `https://<runner-domain>/`에 Runner 안내 문장이 보이는지 확인합니다. 실제 파일 URL은 `/view/<DRIVE_FILE_ID>`입니다. 승인 폴더 밖의 ID는 403이어야 합니다.
+배포 후 `https://<runner-domain>/`에 Runner 안내 문장이 보이는지 확인합니다. 포털이 만드는 실제 파일 URL은 `/.netlify/functions/render?id=<DRIVE_FILE_ID>`입니다. 승인 폴더 밖의 ID는 403이어야 합니다.
 
 Netlify는 monorepo의 사이트별 `netlify.toml`을 찾을 때 Package directory를 우선 확인하며, Base directory를 비우면 저장소 루트에서 공통 서버 모듈을 묶을 수 있습니다. 참고: [Netlify monorepo 설정](https://docs.netlify.com/build/configure-builds/monorepos/)
 
