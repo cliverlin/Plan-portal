@@ -8,8 +8,8 @@
   directory = "runner/netlify/functions"
 
 [[redirects]]
-  from = "/view/:id"
-  to = "/.netlify/functions/render?id=:id"
+  from = "/view/*"
+  to = "/.netlify/functions/render?id=:splat"
   status = 200
   force = true
 

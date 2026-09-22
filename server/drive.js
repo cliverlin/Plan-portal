@@ -5,6 +5,9 @@ const DRIVE_API_BASE = "https://www.googleapis.com/drive/v3";
 const DEFAULT_MAX_FILE_BYTES = 5 * 1024 * 1024;
 const HTML_MIME_TYPES = new Set([
   "text/html",
+  // Google Drive can preserve an uploaded .html file as plain text.
+  // The filename check below still requires a .html/.htm extension.
+  "text/plain",
   "application/xhtml+xml",
   "application/octet-stream",
 ]);

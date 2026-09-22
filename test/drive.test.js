@@ -100,7 +100,7 @@ test("lists only direct, non-trashed HTML files in the approved folder", async (
           {
             id: "valid_file_123",
             name: "approved.html",
-            mimeType: "text/html",
+            mimeType: "text/plain",
             size: "120",
             modifiedTime: "2026-09-22T15:30:00Z",
             parents: ["approved-folder"],
@@ -210,7 +210,7 @@ test("renders a public HTML file using only the server-side API key", async () =
       jsonResponse({
         id: "public_file_123",
         name: "public.html",
-        mimeType: "text/html",
+        mimeType: "text/plain",
         size: "45",
         parents: [PUBLIC_ENV.GOOGLE_DRIVE_FOLDER_ID],
         trashed: false,
