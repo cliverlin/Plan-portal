@@ -842,3 +842,13 @@ a {
         right: auto;
     }
 }
+
+.section-sync {
+    min-height: 18px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.section-sync.is-connected {
+    color: #9ee6ba;
+}

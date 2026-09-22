@@ -1,4 +1,4 @@
-function loadProjectDetail() {
+async function loadProjectDetail() {
     const params = new URLSearchParams(window.location.search);
     const projectId = params.get("id");
 
@@ -12,8 +12,12 @@ function loadProjectDetail() {
     }
 
     try {
-        const projects = PROJECTS_DATA;
-        const project = projects.find((item) => item.id === projectId);
+        let project;
+        if (projectId === "drive-published") {
+            project = await window.OK_PLAN_DRIVE.fetchProject();
+        } else {
+            project = PROJECTS_DATA.find((item) => item.id === projectId);
+        }
 
         if (!project) {
             renderError(cardList, "해당 id에 해당하는 프로토타입 묶음을 찾을 수 없습니다.");
@@ -39,7 +43,7 @@ function loadProjectDetail() {
         cardList.innerHTML = project.items
             .map((item) => {
                 const urlParts = item.prototypeUrl.split('/');
-                const filename = urlParts[urlParts.length - 1];
+                const filename = item.filename || urlParts[urlParts.length - 1];
 
                 return `
           <article class="card">
@@ -47,7 +51,7 @@ function loadProjectDetail() {
               <div class="card-title-wrap">
                 <h2 class="card-title">${escapeHtml(item.title)}</h2>
               </div>
-              <div class="card-tag">Prototype</div>
+              <div class="card-tag">${item.source === "google-drive" ? "Drive HTML" : "Prototype"}</div>
             </div>
 
             <div class="card-desc" style="min-height: auto; margin-bottom: 12px;">

@@ -1,9 +1,26 @@
-function loadProjects() {
+async function loadProjects() {
     const projectList = document.getElementById("projectList");
     const projectCount = document.getElementById("projectCount");
+    const driveSyncStatus = document.getElementById("driveSyncStatus");
 
     try {
-        const projects = [...PROJECTS_DATA].reverse().sort((a, b) => {
+        const projects = [...PROJECTS_DATA];
+
+        try {
+            const driveProject = await window.OK_PLAN_DRIVE.fetchProject();
+            projects.push(driveProject);
+            if (driveSyncStatus) {
+                driveSyncStatus.textContent = `Google Drive 자동 게시 ${driveProject.items.length}개 연동`;
+                driveSyncStatus.classList.add("is-connected");
+            }
+        } catch (driveError) {
+            console.warn("Google Drive publishing is unavailable:", driveError);
+            if (driveSyncStatus) {
+                driveSyncStatus.textContent = "저장소에 등록된 프로토타입";
+            }
+        }
+
+        projects.sort((a, b) => {
             return new Date(b.date) - new Date(a.date);
         });
 
@@ -31,7 +48,7 @@ function loadProjects() {
                 ${escapeHtml(project.groupTitle)}
                 ${index === 0 ? '<span class="badge-new">NEW</span>' : ''}
               </h2>
-              <div class="card-tag">Prototype ${itemCount}</div>
+              <div class="card-tag">${project.source === "google-drive" ? "Drive" : "Prototype"} ${itemCount}</div>
             </div>
 
             <div class="group-card-desc" style="margin-bottom: 20px;">

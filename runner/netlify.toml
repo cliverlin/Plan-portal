@@ -1,0 +1,19 @@
+[build]
+  publish = "runner/public"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[functions]
+  directory = "runner/netlify/functions"
+
+[[redirects]]
+  from = "/view/:id"
+  to = "/.netlify/functions/render?id=:id"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/404.html"
+  status = 404
