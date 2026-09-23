@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(find /c/Planworks/Plan-portal/prototypes -type f -name *.html)"
-    ]
-  }
-}
