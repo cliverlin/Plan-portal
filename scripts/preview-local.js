@@ -37,9 +37,11 @@ function resolvePublicPath(urlPath) {
 
 const server = http.createServer(async (request, response) => {
   if (request.url.split("?")[0] === "/api/drive-projects") {
+    const requestUrl = new URL(request.url, `http://${request.headers.host || "127.0.0.1"}`);
     const result = await listDriveProjects({
       httpMethod: request.method,
       headers: { host: request.headers.host },
+      queryStringParameters: Object.fromEntries(requestUrl.searchParams),
     });
     response.writeHead(result.statusCode, result.headers);
     response.end(result.body);

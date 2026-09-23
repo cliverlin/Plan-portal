@@ -29,13 +29,16 @@ function createHandler(options = {}) {
     }
 
     try {
+      const forceRefresh = Boolean(event.queryStringParameters?.refresh);
       const runnerOrigin = getRunnerOrigin(env);
       const requestHost = event.headers && (event.headers.host || event.headers.Host);
       if (requestHost && new URL(runnerOrigin).host === requestHost) {
         throw new ConfigurationError("DRIVE_RUNNER_ORIGIN은 포털과 다른 출처여야 합니다.");
       }
 
-      const response = await fetchImpl(`${runnerOrigin}/.netlify/functions/projects`, {
+      const runnerUrl = new URL(`${runnerOrigin}/.netlify/functions/projects`);
+      if (forceRefresh) runnerUrl.searchParams.set("refresh", String(Date.now()));
+      const response = await fetchImpl(runnerUrl, {
         headers: { accept: "application/json" },
       });
       if (!response.ok) {
@@ -49,7 +52,7 @@ function createHandler(options = {}) {
       return json(
         200,
         { project: toPortalProject(payload.files, { runnerOrigin }) },
-        "public, max-age=60, s-maxage=60"
+        forceRefresh ? "no-store" : "public, max-age=60, s-maxage=60"
       );
     } catch (error) {
       if (error instanceof ConfigurationError) {
