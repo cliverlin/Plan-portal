@@ -1,11 +1,16 @@
 (function (global) {
   "use strict";
 
-  async function fetchDriveProject() {
-    const response = await fetch("/api/drive-projects", {
+  async function fetchDriveProject(options = {}) {
+    const forceRefresh = Boolean(options.forceRefresh);
+    const requestUrl = forceRefresh
+      ? `/api/drive-projects?refresh=${Date.now()}`
+      : "/api/drive-projects";
+    const response = await fetch(requestUrl, {
       method: "GET",
       headers: { accept: "application/json" },
       credentials: "same-origin",
+      cache: forceRefresh ? "no-store" : "default",
     });
 
     if (!response.ok) {

@@ -279,6 +279,34 @@ test("portal list endpoint proxies the runner without Drive credentials", async 
   assert.equal(requests[0].url, "https://runner.example.com/.netlify/functions/projects");
   assert.match(response.body, /public_file_123/);
   assert.match(response.body, /https:\/\/runner\.example\.com\/\.netlify\/functions\/render/);
+  assert.equal(response.headers["cache-control"], "public, max-age=60, s-maxage=60");
+});
+
+test("portal refresh bypasses both portal and runner list caches", async () => {
+  const requests = [];
+  const fetchImpl = sequenceFetch([
+    jsonResponse({
+      files: [{
+        id: "fresh_file_123",
+        name: "fresh.html",
+        createdTime: "2026-09-23T01:00:00Z",
+        modifiedTime: "2026-09-23T01:00:00Z",
+      }],
+    }),
+  ], requests);
+  const handler = createListHandler({
+    env: { DRIVE_RUNNER_ORIGIN: "https://runner.example.com" },
+    fetchImpl,
+  });
+  const response = await handler({
+    httpMethod: "GET",
+    headers: { host: "portal.example.com" },
+    queryStringParameters: { refresh: "123" },
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.match(requests[0].url, /^https:\/\/runner\.example\.com\/\.netlify\/functions\/projects\?refresh=\d+$/);
+  assert.equal(response.headers["cache-control"], "no-store");
 });
 
 test("runner list endpoint reads Drive with the server-side key", async () => {
@@ -301,6 +329,21 @@ test("runner list endpoint reads Drive with the server-side key", async () => {
   assert.equal(response.statusCode, 200);
   assert.deepEqual(JSON.parse(response.body).files.map((file) => file.id), ["public_file_123"]);
   assert.doesNotMatch(response.body, /public-folder-api-key/);
+  assert.equal(response.headers["cache-control"], "public, max-age=60, s-maxage=60");
+});
+
+test("runner refresh response is not cached", async () => {
+  const fetchImpl = sequenceFetch([
+    jsonResponse({ files: [] }),
+  ]);
+  const handler = createRunnerListHandler({ env: PUBLIC_ENV, fetchImpl });
+  const response = await handler({
+    httpMethod: "GET",
+    queryStringParameters: { refresh: "123" },
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.headers["cache-control"], "no-store");
 });
 
 test("list endpoint refuses to use the portal origin as the runner origin", async () => {

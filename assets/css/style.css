@@ -358,7 +358,7 @@ a {
 
 .drive-toolbar {
     display: grid;
-    grid-template-columns: minmax(240px, 2fr) auto minmax(0, 1fr) auto;
+    grid-template-columns: minmax(240px, 2fr) auto auto minmax(0, 1fr) auto;
     align-items: center;
     gap: 10px;
     margin-bottom: 14px;
@@ -383,7 +383,7 @@ a {
 }
 
 #driveFileCount {
-    grid-column: 4;
+    grid-column: 5;
 }
 
 .drive-search {
@@ -431,6 +431,45 @@ a {
     font: inherit;
     font-size: 13px;
     cursor: pointer;
+}
+
+.drive-refresh {
+    grid-column: 3;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    height: 44px;
+    padding: 0 14px;
+    color: var(--text-sub);
+    background: rgba(13, 19, 31, 0.72);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.drive-refresh:hover:not(:disabled) {
+    color: var(--text-main);
+    background: rgba(138, 180, 255, 0.08);
+    border-color: var(--line-strong);
+}
+
+.drive-refresh:disabled {
+    cursor: wait;
+    opacity: 0.58;
+}
+
+.drive-refresh.is-loading .drive-refresh-icon {
+    animation: drive-refresh-spin 0.8s linear infinite;
+}
+
+@keyframes drive-refresh-spin {
+    to { transform: rotate(360deg); }
 }
 
 .drive-file-row {
@@ -983,8 +1022,13 @@ a {
         grid-column: 1;
     }
 
-    #driveFileCount {
+    .drive-refresh {
         grid-column: 2;
+    }
+
+    #driveFileCount {
+        grid-column: 1 / -1;
+        justify-self: end;
     }
 
     .drive-file-meta {

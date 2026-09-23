@@ -52,18 +52,30 @@ function renderDriveFiles() {
         .join("");
 }
 
-async function loadDriveFiles() {
+async function loadDriveFiles(options = {}) {
+    const forceRefresh = Boolean(options.forceRefresh);
     const driveFileList = document.getElementById("driveFileList");
     const driveFileCount = document.getElementById("driveFileCount");
     const driveSyncStatus = document.getElementById("driveSyncStatus");
+    const driveRefresh = document.getElementById("driveRefresh");
+
+    driveRefresh.disabled = true;
+    driveRefresh.classList.add("is-loading");
+    if (forceRefresh) driveSyncStatus.textContent = "최신 게시 목록 확인 중";
 
     try {
-        const driveProject = await window.OK_PLAN_DRIVE.fetchProject();
+        const driveProject = await window.OK_PLAN_DRIVE.fetchProject({ forceRefresh });
         driveItems = Array.isArray(driveProject.items) ? [...driveProject.items] : [];
-        driveSyncStatus.textContent = `게시 파일 ${driveItems.length}개 동기화됨`;
+        driveSyncStatus.textContent = forceRefresh
+            ? `최신 게시 파일 ${driveItems.length}개 확인 완료`
+            : `게시 파일 ${driveItems.length}개 동기화됨`;
         renderDriveFiles();
     } catch (error) {
         console.warn("Google Drive publishing is unavailable:", error);
+        if (forceRefresh && driveItems.length > 0) {
+            driveSyncStatus.textContent = "새로고침에 실패해 기존 목록을 유지합니다.";
+            return;
+        }
         driveFileCount.textContent = "총 0개";
         driveSyncStatus.textContent = "게시 목록을 불러오지 못했습니다.";
         driveFileList.innerHTML = `
@@ -72,12 +84,18 @@ async function loadDriveFiles() {
         ${escapeHtml(error.message)}
       </div>
     `;
+    } finally {
+        driveRefresh.disabled = false;
+        driveRefresh.classList.remove("is-loading");
     }
 }
 
 function setupDriveControls() {
     document.getElementById("driveSearch").addEventListener("input", renderDriveFiles);
     document.getElementById("driveSort").addEventListener("change", renderDriveFiles);
+    document.getElementById("driveRefresh").addEventListener("click", () => {
+        loadDriveFiles({ forceRefresh: true });
+    });
 }
 
 function escapeHtml(value) {
