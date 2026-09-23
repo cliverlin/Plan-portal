@@ -1,0 +1,14 @@
+{
+  "name": "ok-plan-portal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OfficeKeeper planning artifact portal",
+  "scripts": {
+    "build": "node scripts/build-portal.js",
+    "preview:local": "node scripts/preview-local.js https://okplan-runner.netlify.app",
+    "test": "node --test --test-isolation=none"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

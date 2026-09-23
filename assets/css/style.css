@@ -48,6 +48,18 @@ a {
     color: inherit;
 }
 
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 .bg-grid {
     position: fixed;
     inset: 0;
@@ -334,6 +346,150 @@ a {
     display: grid;
     grid-template-columns: 1fr;
     gap: 16px;
+}
+
+.drive-file-list {
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: rgba(13, 19, 31, 0.72);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+}
+
+.drive-toolbar {
+    display: grid;
+    grid-template-columns: minmax(240px, 2fr) auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.drive-sort {
+    grid-column: 2;
+    position: relative;
+}
+
+.drive-sort::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    width: 7px;
+    height: 7px;
+    border-right: 1.5px solid var(--text-muted);
+    border-bottom: 1.5px solid var(--text-muted);
+    transform: translateY(-70%) rotate(45deg);
+    pointer-events: none;
+}
+
+#driveFileCount {
+    grid-column: 4;
+}
+
+.drive-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 44px;
+    padding: 0 14px;
+    color: var(--text-muted);
+    background: rgba(13, 19, 31, 0.72);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+}
+
+.drive-search:focus-within {
+    border-color: rgba(138, 180, 255, 0.55);
+    box-shadow: 0 0 0 3px rgba(138, 180, 255, 0.1);
+}
+
+.drive-search input {
+    width: 100%;
+    padding: 0;
+    color: var(--text-main);
+    background: transparent;
+    border: 0;
+    outline: 0;
+    font: inherit;
+    font-size: 14px;
+}
+
+.drive-search input::placeholder {
+    color: var(--text-muted);
+}
+
+.drive-sort select {
+    appearance: none;
+    -webkit-appearance: none;
+    height: 44px;
+    min-width: 138px;
+    padding: 0 40px 0 13px;
+    color: var(--text-main);
+    background-color: rgba(13, 19, 31, 0.92);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.drive-file-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 24px;
+    min-height: 82px;
+    padding: 16px 20px;
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px solid var(--line);
+    transition: background-color 0.16s ease, border-color 0.16s ease;
+}
+
+.drive-file-row:last-child {
+    border-bottom: 0;
+}
+
+.drive-file-row:hover {
+    background: rgba(138, 180, 255, 0.08);
+}
+
+.drive-file-name {
+    margin: 0;
+    color: var(--text-main);
+    font-size: 16px;
+    font-weight: 620;
+    line-height: 1.45;
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+}
+
+.drive-file-meta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px;
+    min-width: 178px;
+    color: var(--text-muted);
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.drive-file-open-icon {
+    color: var(--primary);
+    opacity: 0.7;
+    transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.drive-file-row:hover .drive-file-open-icon {
+    opacity: 1;
+    transform: translate(1px, -1px);
+}
+
+.drive-file-loading {
+    padding: 24px 20px;
+    color: var(--text-muted);
+    font-size: 14px;
 }
 
 .group-card {
@@ -663,7 +819,8 @@ a {
 }
 
 .btn:focus-visible,
-.group-card:focus-visible {
+.group-card:focus-visible,
+.drive-file-row:focus-visible {
     outline-offset: 4px;
     border-radius: 12px;
 }
@@ -808,6 +965,33 @@ a {
         padding: 20px;
     }
 
+    .drive-file-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        padding: 16px;
+    }
+
+    .drive-toolbar {
+        grid-template-columns: 1fr auto;
+    }
+
+    .drive-search {
+        grid-column: 1 / -1;
+    }
+
+    .drive-sort {
+        grid-column: 1;
+    }
+
+    #driveFileCount {
+        grid-column: 2;
+    }
+
+    .drive-file-meta {
+        justify-content: space-between;
+        min-width: 0;
+    }
+
     .card-top {
         flex-direction: column;
     }
@@ -841,4 +1025,14 @@ a {
         left: 0;
         right: auto;
     }
+}
+
+.section-sync {
+    min-height: 18px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.section-sync.is-connected {
+    color: #9ee6ba;
 }
