@@ -40,12 +40,13 @@ function createHandler(options = {}) {
     }
 
     try {
+      const forceRefresh = Boolean(event.queryStringParameters?.refresh);
       const config = getDriveConfig(env);
       const files = await listPublishedHtml(config, fetchImpl);
       return json(
         200,
         { files: files.map(toSafeFile) },
-        "public, max-age=60, s-maxage=60"
+        forceRefresh ? "no-store" : "public, max-age=60, s-maxage=60"
       );
     } catch (error) {
       if (error instanceof ConfigurationError) {
