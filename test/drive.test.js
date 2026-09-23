@@ -161,6 +161,10 @@ test("builds runner links without exposing Drive credentials", () => {
   assert.doesNotMatch(JSON.stringify(project), /client-secret|refresh-token/);
 });
 
+test("formats Korean midnight with hour 00 instead of 24", () => {
+  assert.equal(formatKoreanDateTime("2026-09-22T15:42:23.172Z"), "2026-09-23 00:42");
+});
+
 test("rejects rendering a file outside the approved folder before downloading content", async () => {
   const fetchImpl = sequenceFetch([
     jsonResponse({ access_token: "access-token" }),

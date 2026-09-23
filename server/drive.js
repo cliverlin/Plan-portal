@@ -250,7 +250,7 @@ function formatKoreanDateTime(value) {
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
-    hour12: false,
+    hourCycle: "h23",
   }).formatToParts(date);
   const valueOf = (type) => parts.find((part) => part.type === type)?.value || "";
   return `${valueOf("year")}-${valueOf("month")}-${valueOf("day")} ${valueOf("hour")}:${valueOf("minute")}`;
