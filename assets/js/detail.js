@@ -12,12 +12,7 @@ async function loadProjectDetail() {
     }
 
     try {
-        let project;
-        if (projectId === "drive-published") {
-            project = await window.OK_PLAN_DRIVE.fetchProject();
-        } else {
-            project = PROJECTS_DATA.find((item) => item.id === projectId);
-        }
+        const project = PROJECTS_DATA.find((item) => item.id === projectId);
 
         if (!project) {
             renderError(cardList, "해당 id에 해당하는 프로토타입 묶음을 찾을 수 없습니다.");

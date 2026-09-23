@@ -144,6 +144,7 @@ test("builds runner links without exposing Drive credentials", () => {
       {
         id: "valid_file_123",
         name: "prototype.html",
+        createdTime: "2026-09-22T14:00:00Z",
         modifiedTime: "2026-09-22T15:30:00Z",
         resourceKey: "resource_key_123",
       },
@@ -156,6 +157,7 @@ test("builds runner links without exposing Drive credentials", () => {
     "https://runner.example.com/.netlify/functions/render?id=valid_file_123&resourceKey=resource_key_123"
   );
   assert.equal(project.items[0].updatedAt, "2026-09-23 00:30");
+  assert.equal(project.items[0].publishedAt, "2026-09-22 23:00");
   assert.doesNotMatch(JSON.stringify(project), /client-secret|refresh-token/);
 });
 
@@ -256,6 +258,7 @@ test("portal list endpoint proxies the runner without Drive credentials", async 
       files: [{
         id: "public_file_123",
         name: "public.html",
+        createdTime: "2026-09-22T14:00:00Z",
         modifiedTime: "2026-09-22T15:30:00Z",
         description: "Public prototype",
         resourceKey: "resource_key_123",

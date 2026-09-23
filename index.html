@@ -30,20 +30,6 @@
         <div class="brand-title">OfficeKeeper Plan Portal</div>
       </div>
     </a>
-    <nav class="topnav">
-      <div class="topnav-item">
-        <button class="topnav-btn" type="button" aria-haspopup="true" aria-expanded="false">
-          Tools
-          <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-        <div class="topnav-menu" role="menu">
-          <a class="topnav-link" role="menuitem" target="_blank" rel="noopener" href="https://okplan-tools.netlify.app/figma-comment-tracker/">
-            <span class="topnav-link-title">Figma Comment Tracker</span>
-            <span class="topnav-link-sub">Figma 댓글 검토·추적</span>
-          </a>
-        </div>
-      </div>
-    </nav>
   </header>
 
   <div class="wrap">
@@ -56,16 +42,29 @@
       </div>
     </div>
 
-    <section class="section" style="margin-top: 10px;">
-      <div class="section-head">
-        <div>
-          <h1 class="section-title" style="color: var(--text-muted); margin: 0 0 8px; font-weight: normal;">Index</h1>
-          <div class="section-sync" id="driveSyncStatus" role="status" aria-live="polite">Google Drive 게시 목록 확인 중</div>
-        </div>
-        <div class="count" id="projectCount">총 0개</div>
+    <section class="section drive-publish-section" style="margin-top: 10px;">
+      <h1 class="sr-only">Google Drive 게시 파일</h1>
+      <div class="drive-toolbar">
+        <label class="drive-search">
+          <span class="sr-only">파일명 검색</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="driveSearch" type="search" placeholder="파일명 검색" autocomplete="off" />
+        </label>
+        <label class="drive-sort">
+          <span class="sr-only">게시일 정렬</span>
+          <select id="driveSort">
+            <option value="desc">게시일 최신순</option>
+            <option value="asc">게시일 오래된순</option>
+          </select>
+        </label>
+        <div class="count" id="driveFileCount">총 0개</div>
       </div>
 
-      <div class="group-grid" id="projectList"></div>
+      <div class="sr-only" id="driveSyncStatus" role="status" aria-live="polite">게시 목록 확인 중</div>
+
+      <div class="drive-file-list" id="driveFileList" aria-live="polite">
+        <div class="drive-file-loading">Google Drive 게시 파일을 불러오고 있습니다.</div>
+      </div>
     </section>
 
     <footer class="footer" style="justify-content: center;">
@@ -73,10 +72,8 @@
     </footer>
   </div>
 
-  <script src="./data/projects.js"></script>
   <script src="./assets/js/drive-projects.js"></script>
   <script src="./assets/js/main.js"></script>
-  <script src="./assets/js/nav.js"></script>
 </body>
 
 </html>

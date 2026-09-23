@@ -1,76 +1,83 @@
-async function loadProjects() {
-    const projectList = document.getElementById("projectList");
-    const projectCount = document.getElementById("projectCount");
+let driveItems = [];
+
+function renderDriveFiles() {
+    const driveFileList = document.getElementById("driveFileList");
+    const driveFileCount = document.getElementById("driveFileCount");
+    const searchQuery = document.getElementById("driveSearch").value.trim().toLocaleLowerCase("ko-KR");
+    const sortDirection = document.getElementById("driveSort").value;
+
+    const visibleItems = driveItems
+        .filter((item) => {
+            const filename = item.filename || item.title || "";
+            return filename.toLocaleLowerCase("ko-KR").includes(searchQuery);
+        })
+        .sort((a, b) => {
+            const aPublishedAt = String(a.publishedAt || a.updatedAt || "");
+            const bPublishedAt = String(b.publishedAt || b.updatedAt || "");
+            const dateOrder = sortDirection === "asc"
+                ? aPublishedAt.localeCompare(bPublishedAt)
+                : bPublishedAt.localeCompare(aPublishedAt);
+            return dateOrder || String(a.filename || "").localeCompare(String(b.filename || ""));
+        });
+
+    driveFileCount.textContent = searchQuery
+        ? `${visibleItems.length}개 / 총 ${driveItems.length}개`
+        : `총 ${driveItems.length}개`;
+
+    if (visibleItems.length === 0) {
+        driveFileList.innerHTML = `
+      <div class="drive-file-loading">
+        ${searchQuery ? "검색 결과가 없습니다." : "게시된 HTML 파일이 없습니다."}
+      </div>
+    `;
+        return;
+    }
+
+    driveFileList.innerHTML = visibleItems
+        .map((item) => {
+            const filename = item.filename || item.title || "이름 없는 HTML 파일";
+            const publishedAt = item.publishedAt || item.updatedAt || "게시 일시 확인 불가";
+
+            return `
+        <a class="drive-file-row" href="${encodeAttribute(item.prototypeUrl)}" target="_blank" rel="noopener noreferrer">
+          <h2 class="drive-file-name">${escapeHtml(filename)}</h2>
+          <span class="drive-file-meta">
+            <span class="drive-file-date">${escapeHtml(publishedAt)}</span>
+            <svg class="drive-file-open-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+            <span class="sr-only">새 탭에서 열기</span>
+          </span>
+        </a>
+      `;
+        })
+        .join("");
+}
+
+async function loadDriveFiles() {
+    const driveFileList = document.getElementById("driveFileList");
+    const driveFileCount = document.getElementById("driveFileCount");
     const driveSyncStatus = document.getElementById("driveSyncStatus");
 
     try {
-        const projects = [...PROJECTS_DATA];
-
-        try {
-            const driveProject = await window.OK_PLAN_DRIVE.fetchProject();
-            projects.push(driveProject);
-            if (driveSyncStatus) {
-                driveSyncStatus.textContent = `Google Drive 자동 게시 ${driveProject.items.length}개 연동`;
-                driveSyncStatus.classList.add("is-connected");
-            }
-        } catch (driveError) {
-            console.warn("Google Drive publishing is unavailable:", driveError);
-            if (driveSyncStatus) {
-                driveSyncStatus.textContent = "저장소에 등록된 프로토타입";
-            }
-        }
-
-        projects.sort((a, b) => {
-            return new Date(b.date) - new Date(a.date);
-        });
-
-        if (!Array.isArray(projects) || projects.length === 0) {
-            projectCount.textContent = "총 0개";
-            projectList.innerHTML = `
-        <div class="empty-state">
-          아직 등록된 프로토타입 묶음이 없습니다.<br />
-          data/projects.json에 데이터를 추가하면 목록이 표시됩니다.
-        </div>
-      `;
-            return;
-        }
-
-        projectCount.textContent = `총 ${projects.length}개`;
-
-        projectList.innerHTML = projects
-            .map((project, index) => {
-                const itemCount = Array.isArray(project.items) ? project.items.length : 0;
-
-                return `
-          <a class="group-card" href="./detail.html?id=${encodeURIComponent(project.id)}">
-            <div class="group-card-top">
-              <h2 class="group-card-title" style="display: flex; align-items: center; gap: 8px;">
-                ${escapeHtml(project.groupTitle)}
-                ${index === 0 ? '<span class="badge-new">NEW</span>' : ''}
-              </h2>
-              <div class="card-tag">${project.source === "google-drive" ? "Drive" : "Prototype"} ${itemCount}</div>
-            </div>
-
-            <div class="group-card-desc" style="margin-bottom: 20px;">
-              ${escapeHtml(project.description || "")}
-            </div>
-
-            <div class="group-card-bottom">
-              <div class="group-card-meta">${escapeHtml(project.date)}</div>
-            </div>
-          </a>
-        `;
-            })
-            .join("");
+        const driveProject = await window.OK_PLAN_DRIVE.fetchProject();
+        driveItems = Array.isArray(driveProject.items) ? [...driveProject.items] : [];
+        driveSyncStatus.textContent = `게시 파일 ${driveItems.length}개 동기화됨`;
+        renderDriveFiles();
     } catch (error) {
-        projectCount.textContent = "불러오기 실패";
-        projectList.innerHTML = `
+        console.warn("Google Drive publishing is unavailable:", error);
+        driveFileCount.textContent = "총 0개";
+        driveSyncStatus.textContent = "게시 목록을 불러오지 못했습니다.";
+        driveFileList.innerHTML = `
       <div class="error-state">
-        데이터를 불러오는 중 문제가 발생했습니다.<br />
+        Google Drive 게시 파일을 불러오는 중 문제가 발생했습니다.<br />
         ${escapeHtml(error.message)}
       </div>
     `;
     }
+}
+
+function setupDriveControls() {
+    document.getElementById("driveSearch").addEventListener("input", renderDriveFiles);
+    document.getElementById("driveSort").addEventListener("change", renderDriveFiles);
 }
 
 function escapeHtml(value) {
@@ -82,4 +89,9 @@ function escapeHtml(value) {
         .replaceAll("'", "&#39;");
 }
 
-loadProjects();
+function encodeAttribute(value) {
+    return String(value).replaceAll("&", "&amp;").replaceAll('"', "&quot;");
+}
+
+setupDriveControls();
+loadDriveFiles();

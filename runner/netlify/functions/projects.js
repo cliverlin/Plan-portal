@@ -23,6 +23,7 @@ function toSafeFile(file) {
   return {
     id: file.id,
     name: file.name,
+    createdTime: file.createdTime,
     modifiedTime: file.modifiedTime,
     description: file.description || "",
     resourceKey: file.resourceKey || "",

@@ -233,6 +233,7 @@ function toPortalProject(files, config) {
         file.resourceKey ? `&resourceKey=${encodeURIComponent(file.resourceKey)}` : ""
       }`,
       filename: file.name,
+      publishedAt: formatKoreanDateTime(file.createdTime || file.modifiedTime),
       updatedAt: formatKoreanDateTime(file.modifiedTime),
       source: "google-drive",
     })),
