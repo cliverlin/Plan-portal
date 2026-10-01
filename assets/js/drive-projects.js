@@ -3,14 +3,16 @@
 
   async function fetchDriveProject(options = {}) {
     const forceRefresh = Boolean(options.forceRefresh);
-    const requestUrl = forceRefresh
-      ? `/api/drive-projects?refresh=${Date.now()}`
-      : "/api/drive-projects";
+    const params = new URLSearchParams();
+    if (options.path) params.set("path", options.path);
+    if (forceRefresh) params.set("refresh", String(Date.now()));
+    const requestUrl = `/api/drive-projects${params.size ? `?${params}` : ""}`;
     const response = await fetch(requestUrl, {
       method: "GET",
       headers: { accept: "application/json" },
       credentials: "same-origin",
       cache: forceRefresh ? "no-store" : "default",
+      signal: options.signal,
     });
 
     if (!response.ok) {

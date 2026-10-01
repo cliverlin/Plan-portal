@@ -3,6 +3,8 @@
 const TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 const DRIVE_API_BASE = "https://www.googleapis.com/drive/v3";
 const DEFAULT_MAX_FILE_BYTES = 5 * 1024 * 1024;
+const FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
+const LIST_FIELDS = "nextPageToken,incompleteSearch,files(id,name,mimeType,size,modifiedTime,createdTime,description,parents,trashed,resourceKey,owners(displayName,photoLink,permissionId))";
 const HTML_MIME_TYPES = new Set([
   "text/html",
   // Google Drive can preserve an uploaded .html file as plain text.
@@ -136,7 +138,7 @@ function isPublishableHtml(file, config, options = {}) {
   );
 }
 
-async function driveFetch(path, config, accessToken, fetchImpl = fetch, resourceKey = "") {
+async function driveFetch(path, config, accessToken, fetchImpl = fetch, resourceKey = "", resourceId = "") {
   const url = new URL(`${DRIVE_API_BASE}${path}`);
   const headers = {};
   if (config.authMode === "api-key") {
@@ -145,7 +147,7 @@ async function driveFetch(path, config, accessToken, fetchImpl = fetch, resource
     headers.authorization = `Bearer ${accessToken}`;
   }
   if (resourceKey) {
-    headers["x-goog-drive-resource-keys"] = `${url.pathname.split("/").at(-1)}/${resourceKey}`;
+    headers["x-goog-drive-resource-keys"] = `${resourceId || url.pathname.split("/").at(-1)}/${resourceKey}`;
   }
 
   const response = await fetchImpl(url, { headers });
@@ -156,26 +158,79 @@ async function driveFetch(path, config, accessToken, fetchImpl = fetch, resource
   return response;
 }
 
-async function listFolderHtml(config, accessToken, fetchImpl = fetch) {
+async function listFolderEntries(config, accessToken, fetchImpl = fetch, resourceKey = "") {
   const params = new URLSearchParams({
     q: `'${escapeDriveQueryValue(config.folderId)}' in parents and trashed = false`,
     orderBy: "modifiedTime desc,name",
     pageSize: "1000",
-    fields: "files(id,name,mimeType,size,modifiedTime,createdTime,description,parents,trashed,resourceKey)",
+    fields: LIST_FIELDS,
     spaces: "drive",
     supportsAllDrives: "true",
     includeItemsFromAllDrives: "true",
   });
-  const response = await driveFetch(`/files?${params}`, config, accessToken, fetchImpl);
-  const payload = await response.json();
-  return (Array.isArray(payload.files) ? payload.files : []).filter((file) =>
-    isPublishableHtml(file, config, { folderQueryVerified: true })
-  );
+  const entries = new Map();
+  const seenTokens = new Set();
+  for (let page = 0; page < 100; page += 1) {
+    const response = await driveFetch(`/files?${params}`, config, accessToken, fetchImpl, resourceKey, config.folderId);
+    const payload = await response.json();
+    if (!Array.isArray(payload.files) || payload.incompleteSearch) {
+      throw new DriveRequestError("폴더 목록을 완전히 확인하지 못했습니다.");
+    }
+    for (const file of payload.files) {
+      // Some public files hide parents. The exact parent query is the membership evidence.
+      const inFolder = !file.parents?.length || file.parents.includes(config.folderId);
+      if (!file.trashed && inFolder && (file.mimeType === FOLDER_MIME_TYPE ||
+          isPublishableHtml(file, config, { folderQueryVerified: true }))) entries.set(file.id, file);
+    }
+    if (!payload.nextPageToken) return [...entries.values()];
+    if (seenTokens.has(payload.nextPageToken)) break;
+    seenTokens.add(payload.nextPageToken);
+    params.set("pageToken", payload.nextPageToken);
+  }
+  throw new DriveRequestError("폴더 목록 페이지를 모두 확인하지 못했습니다.");
 }
 
 async function listPublishedHtml(config, fetchImpl = fetch) {
+  const folder = await listPublishedFolder(config, fetchImpl);
+  return folder.files.filter((file) => file.mimeType !== FOLDER_MIME_TYPE);
+}
+
+function parseFolderPath(value = "") {
+  if (typeof value !== "string" || value.length > 20000) {
+    throw new DriveRequestError("올바르지 않은 폴더 경로입니다.", 400);
+  }
+  if (!value) return [];
+  const ids = value.split("/");
+  if (ids.length > 100 || new Set(ids).size !== ids.length) {
+    throw new DriveRequestError("올바르지 않은 폴더 경로입니다.", 400);
+  }
+  ids.forEach(assertValidFileId);
+  return ids;
+}
+
+async function resolvePublishedFolder(config, accessToken, fetchImpl, folderPath) {
+  const ids = parseFolderPath(folderPath);
+  const breadcrumbs = [{ id: config.folderId, name: "게시용 공간", path: "" }];
+  let currentConfig = config;
+  let resourceKey = "";
+  let entries = await listFolderEntries(currentConfig, accessToken, fetchImpl);
+  for (let index = 0; index < ids.length; index += 1) {
+    // Do not trust a client-supplied ID or parent chain. Verify EVERY edge from the root.
+    // Shortcuts are excluded so they cannot escape the publishing boundary.
+    const folder = entries.find((file) => file.id === ids[index] && file.mimeType === FOLDER_MIME_TYPE);
+    if (!folder) throw new DriveRequestError("게시용 공간 밖이거나 접근할 수 없는 폴더입니다.", 403);
+    breadcrumbs.push({ id: folder.id, name: folder.name, path: ids.slice(0, index + 1).join("/") });
+    currentConfig = { ...config, folderId: folder.id };
+    resourceKey = folder.resourceKey || "";
+    entries = await listFolderEntries(currentConfig, accessToken, fetchImpl, resourceKey);
+  }
+  return { files: entries, breadcrumbs, path: ids.join("/") };
+}
+
+async function listPublishedFolder(config, fetchImpl = fetch, folderPath = "") {
+  parseFolderPath(folderPath); // Reject malformed requests before contacting Google.
   const accessToken = await getAccessToken(config, fetchImpl);
-  return listFolderHtml(config, accessToken, fetchImpl);
+  return resolvePublishedFolder(config, accessToken, fetchImpl, folderPath);
 }
 
 function assertValidFileId(fileId) {
@@ -190,12 +245,13 @@ function assertValidResourceKey(resourceKey) {
   }
 }
 
-async function getPublishedHtml(fileId, config, fetchImpl = fetch, resourceKey = "") {
+async function getPublishedHtml(fileId, config, fetchImpl = fetch, resourceKey = "", folderPath = "") {
   assertValidFileId(fileId);
   assertValidResourceKey(resourceKey);
+  parseFolderPath(folderPath);
   const accessToken = await getAccessToken(config, fetchImpl);
-  const approvedFiles = await listFolderHtml(config, accessToken, fetchImpl);
-  const metadata = approvedFiles.find((file) => file.id === fileId);
+  const approvedFolder = await resolvePublishedFolder(config, accessToken, fetchImpl, folderPath);
+  const metadata = approvedFolder.files.find((file) => file.id === fileId && file.mimeType !== FOLDER_MIME_TYPE);
 
   if (!metadata) {
     throw new DriveRequestError("이 파일은 승인된 게시 폴더의 HTML이 아닙니다.", 403);
@@ -216,9 +272,21 @@ async function getPublishedHtml(fileId, config, fetchImpl = fetch, resourceKey =
   return { metadata, content };
 }
 
-function toPortalProject(files, config) {
+function safeOwners(owners) {
+  return (Array.isArray(owners) ? owners : []).map((owner) => {
+    let photoLink = "";
+    try {
+      const url = new URL(owner.photoLink);
+      if (url.protocol === "https:") photoLink = url.href;
+    } catch { /* Owner photos are optional. */ }
+    const displayName = String(owner.displayName || "소유자 정보 없음");
+    return { id: String(owner.permissionId || owner.id || `name:${displayName}`), displayName, photoLink };
+  });
+}
+
+function toPortalProject(files, config, folder = {}) {
   const newest = files[0];
-  const date = newest ? newest.modifiedTime.slice(0, 10) : new Date().toISOString().slice(0, 10);
+  const date = newest?.modifiedTime?.slice(0, 10) || new Date().toISOString().slice(0, 10);
   return {
     id: "drive-published",
     groupTitle: "Google Drive 게시 프로토타입",
@@ -226,12 +294,19 @@ function toPortalProject(files, config) {
     description: "승인된 Google Drive 게시 폴더에서 자동으로 불러온 단일 HTML 프로토타입입니다.",
     hideFigma: true,
     source: "google-drive",
+    path: folder.path || "",
+    breadcrumbs: folder.breadcrumbs || [{ name: "게시용 공간", path: "" }],
+    preview: Boolean(folder.preview),
     items: files.map((file) => ({
+      id: file.id,
+      type: file.mimeType === FOLDER_MIME_TYPE ? "folder" : "file",
+      folderPath: file.mimeType === FOLDER_MIME_TYPE ? [folder.path, file.id].filter(Boolean).join("/") : "",
+      owners: safeOwners(file.owners),
       title: file.name.replace(/\.html?$/i, ""),
       description: file.description || "Google Drive 게시 폴더에서 자동 등록된 프로토타입",
       prototypeUrl: `${config.runnerOrigin}/.netlify/functions/render?id=${encodeURIComponent(file.id)}${
         file.resourceKey ? `&resourceKey=${encodeURIComponent(file.resourceKey)}` : ""
-      }`,
+      }${folder.path ? `&path=${encodeURIComponent(folder.path)}` : ""}`,
       filename: file.name,
       publishedAt: formatKoreanDateTime(file.createdTime || file.modifiedTime),
       updatedAt: formatKoreanDateTime(file.modifiedTime),
@@ -267,5 +342,9 @@ module.exports = {
   getPublishedHtml,
   isPublishableHtml,
   listPublishedHtml,
+  listPublishedFolder,
+  parseFolderPath,
+  safeOwners,
+  FOLDER_MIME_TYPE,
   toPortalProject,
 };

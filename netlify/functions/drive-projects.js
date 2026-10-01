@@ -5,6 +5,7 @@ const {
   DriveRequestError,
   getRunnerOrigin,
   toPortalProject,
+  parseFolderPath,
 } = require("../../server/drive");
 
 function json(statusCode, payload, cacheControl = "no-store") {
@@ -37,21 +38,27 @@ function createHandler(options = {}) {
       }
 
       const runnerUrl = new URL(`${runnerOrigin}/.netlify/functions/projects`);
+      const folderPath = event.queryStringParameters?.path || "";
+      parseFolderPath(folderPath);
+      if (folderPath) runnerUrl.searchParams.set("path", folderPath);
       if (forceRefresh) runnerUrl.searchParams.set("refresh", String(Date.now()));
       const response = await fetchImpl(runnerUrl, {
         headers: { accept: "application/json" },
       });
       if (!response.ok) {
-        throw new DriveRequestError("Runner에서 게시 목록을 불러오지 못했습니다.", 502);
+        throw new DriveRequestError("Runner에서 게시 목록을 불러오지 못했습니다.", [400, 403, 404].includes(response.status) ? response.status : 502);
       }
       const payload = await response.json();
       if (!payload || !Array.isArray(payload.files)) {
         throw new DriveRequestError("Runner 게시 목록 형식이 올바르지 않습니다.", 502);
       }
+      if (folderPath && (payload.path !== folderPath || !Array.isArray(payload.breadcrumbs))) {
+        throw new DriveRequestError("Runner가 요청한 하위 폴더를 확인하지 못했습니다.", 502);
+      }
 
       return json(
         200,
-        { project: toPortalProject(payload.files, { runnerOrigin }) },
+        { project: toPortalProject(payload.files, { runnerOrigin }, payload) },
         forceRefresh ? "no-store" : "public, max-age=60, s-maxage=60"
       );
     } catch (error) {

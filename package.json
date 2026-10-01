@@ -6,6 +6,8 @@
   "scripts": {
     "build": "node scripts/build-portal.js",
     "preview:local": "node scripts/preview-local.js https://okplan-runner.netlify.app",
+    "preview:demo": "node scripts/preview-local.js --demo",
+    "preview:drive": "node --env-file-if-exists=.env scripts/preview-local.js --drive",
     "test": "node --test --test-isolation=none"
   },
   "engines": {

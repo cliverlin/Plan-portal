@@ -169,12 +169,12 @@ test("rejects rendering a file outside the approved folder before downloading co
   const fetchImpl = sequenceFetch([
     jsonResponse({ access_token: "access-token" }),
     jsonResponse({
-      id: "outside_file_123",
+      files: [{ id: "outside_file_123",
       name: "outside.html",
       mimeType: "text/html",
       size: "120",
       parents: ["another-folder"],
-      trashed: false,
+      trashed: false }],
     }),
   ]);
 

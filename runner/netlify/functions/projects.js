@@ -3,7 +3,8 @@
 const {
   ConfigurationError,
   getDriveConfig,
-  listPublishedHtml,
+  listPublishedFolder,
+  safeOwners,
 } = require("../../../server/drive");
 
 function json(statusCode, payload, cacheControl = "no-store") {
@@ -23,6 +24,8 @@ function toSafeFile(file) {
   return {
     id: file.id,
     name: file.name,
+    mimeType: file.mimeType,
+    owners: safeOwners(file.owners),
     createdTime: file.createdTime,
     modifiedTime: file.modifiedTime,
     description: file.description || "",
@@ -42,10 +45,10 @@ function createHandler(options = {}) {
     try {
       const forceRefresh = Boolean(event.queryStringParameters?.refresh);
       const config = getDriveConfig(env);
-      const files = await listPublishedHtml(config, fetchImpl);
+      const folder = await listPublishedFolder(config, fetchImpl, event.queryStringParameters?.path || "");
       return json(
         200,
-        { files: files.map(toSafeFile) },
+        { files: folder.files.map(toSafeFile), breadcrumbs: folder.breadcrumbs, path: folder.path },
         forceRefresh ? "no-store" : "public, max-age=60, s-maxage=60"
       );
     } catch (error) {

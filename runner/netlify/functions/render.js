@@ -51,7 +51,8 @@ function createHandler(options = {}) {
       const config = getDriveConfig(env);
       const fileId = event.queryStringParameters && event.queryStringParameters.id;
       const resourceKey = event.queryStringParameters && event.queryStringParameters.resourceKey;
-      const { content } = await getPublishedHtml(fileId, config, fetchImpl, resourceKey);
+      const folderPath = event.queryStringParameters?.path || "";
+      const { content } = await getPublishedHtml(fileId, config, fetchImpl, resourceKey, folderPath);
       return { statusCode: 200, headers: SECURITY_HEADERS, body: content };
     } catch (error) {
       if (error instanceof ConfigurationError) {
