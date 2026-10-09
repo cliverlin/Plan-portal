@@ -15,7 +15,7 @@ const { createHandler: createListHandler } = require("../netlify/functions/drive
 const {
   SECURITY_HEADERS,
   createHandler: createRenderHandler,
-} = require("../runner/netlify/functions/render");
+} = require("../server/file-response");
 const { createHandler: createRunnerListHandler } = require("../runner/netlify/functions/projects");
 
 const ENV = {
@@ -192,7 +192,7 @@ test("renders approved HTML with isolated execution headers", async () => {
         id: "valid_file_123",
         name: "approved.html",
         mimeType: "text/html",
-        size: "45",
+        size: String(Buffer.byteLength("<!doctype html><title>Approved</title>")),
         parents: ["approved-folder"],
         trashed: false,
       }],
@@ -200,13 +200,10 @@ test("renders approved HTML with isolated execution headers", async () => {
     new Response("<!doctype html><title>Approved</title>", { status: 200 }),
   ]);
   const handler = createRenderHandler({ env: ENV, fetchImpl });
-  const response = await handler({
-    httpMethod: "GET",
-    queryStringParameters: { id: "valid_file_123" },
-  });
+  const response = await handler(new Request("https://runner.example.com/.netlify/functions/render?id=valid_file_123"));
 
-  assert.equal(response.statusCode, 200);
-  assert.match(response.body, /Approved/);
+  assert.equal(response.status, 200);
+  assert.match(await response.text(), /Approved/);
   assert.match(SECURITY_HEADERS["content-security-policy"], /sandbox/);
   assert.match(SECURITY_HEADERS["content-security-policy"], /frame-ancestors 'none'/);
   assert.equal(SECURITY_HEADERS["x-frame-options"], "DENY");
@@ -221,7 +218,7 @@ test("renders a public HTML file using only the server-side API key", async () =
           id: "public_file_123",
           name: "public.html",
           mimeType: "text/plain",
-          size: "45",
+          size: String(Buffer.byteLength("<!doctype html><title>Public</title>")),
           trashed: false,
           resourceKey: "resource_key_123",
         }],
@@ -231,21 +228,15 @@ test("renders a public HTML file using only the server-side API key", async () =
     requests
   );
   const handler = createRenderHandler({ env: PUBLIC_ENV, fetchImpl });
-  const response = await handler({
-    httpMethod: "GET",
-    queryStringParameters: {
-      id: "public_file_123",
-      resourceKey: "resource_key_123",
-    },
-  });
+  const response = await handler(new Request("https://runner.example.com/.netlify/functions/render?id=public_file_123&resourceKey=resource_key_123"));
 
-  assert.equal(response.statusCode, 200);
+  assert.equal(response.status, 200);
   assert.match(requests[0].url, /key=public-folder-api-key/);
   assert.equal(
     requests[1].init.headers["x-goog-drive-resource-keys"],
     "public_file_123/resource_key_123"
   );
-  assert.match(response.body, /Public/);
+  assert.match(await response.text(), /Public/);
 });
 
 test("portal list endpoint returns a safe error when configuration is absent", async () => {

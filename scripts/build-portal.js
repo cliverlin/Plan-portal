@@ -2,6 +2,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+require("./prepare-vendor").prepareVendor();
 
 const root = path.resolve(__dirname, "..");
 const output = path.join(root, "dist");

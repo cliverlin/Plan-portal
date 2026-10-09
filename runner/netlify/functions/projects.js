@@ -6,6 +6,7 @@ const {
   listPublishedFolder,
   safeOwners,
 } = require("../../../server/drive");
+const { fileType, limitFor } = require("../../../server/file-types");
 
 function json(statusCode, payload, cacheControl = "no-store") {
   return {
@@ -20,11 +21,13 @@ function json(statusCode, payload, cacheControl = "no-store") {
   };
 }
 
-function toSafeFile(file) {
+function toSafeFile(file, config) {
   return {
     id: file.id,
     name: file.name,
     mimeType: file.mimeType,
+    size: file.size,
+    previewLimit: limitFor(fileType(file).kind, config),
     owners: safeOwners(file.owners),
     createdTime: file.createdTime,
     modifiedTime: file.modifiedTime,
@@ -48,7 +51,7 @@ function createHandler(options = {}) {
       const folder = await listPublishedFolder(config, fetchImpl, event.queryStringParameters?.path || "");
       return json(
         200,
-        { files: folder.files.map(toSafeFile), breadcrumbs: folder.breadcrumbs, path: folder.path },
+        { files: folder.files.map((file) => toSafeFile(file, config)), breadcrumbs: folder.breadcrumbs, path: folder.path },
         forceRefresh ? "no-store" : "public, max-age=60, s-maxage=60"
       );
     } catch (error) {

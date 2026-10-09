@@ -12,5 +12,12 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "dompurify": "3.4.16",
+    "marked": "15.0.12"
+  },
+  "devDependencies": {
+    "jsdom": "26.1.0"
   }
 }

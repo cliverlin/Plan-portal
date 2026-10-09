@@ -94,8 +94,37 @@
     </footer>
   </div>
 
+  <dialog class="file-preview-dialog" id="filePreviewDialog" aria-labelledby="filePreviewTitle">
+    <header class="file-preview-header">
+      <div class="file-preview-heading"><h2 id="filePreviewTitle"></h2><span id="filePreviewMeta" class="file-preview-meta"></span></div>
+      <div class="file-preview-header-actions">
+        <div id="filePreviewThemeTools" class="file-preview-theme" hidden role="group" aria-label="문서 보기 모드">
+          <button id="filePreviewLight" type="button" aria-label="일반 모드" title="일반 모드" aria-pressed="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg></button>
+          <button id="filePreviewDark" type="button" aria-label="다크 모드" title="다크 모드" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.9 13A9 9 0 0 1 11 3.1 9 9 0 1 0 20.9 13Z"/></svg></button>
+        </div>
+        <button id="filePreviewClose" type="button" aria-label="미리보기 닫기">닫기 <span aria-hidden="true">×</span></button>
+      </div>
+    </header>
+    <div class="file-preview-toolbar">
+      <div id="filePreviewMarkdownTools" hidden><button id="filePreviewDocument" type="button" aria-pressed="true">문서 보기</button><button id="filePreviewRaw" type="button" aria-pressed="false">원문 보기</button></div>
+      <div id="filePreviewImageTools" hidden><button id="filePreviewZoomOut" type="button" aria-label="이미지 축소">−</button><span id="filePreviewZoomLevel">맞춤</span><button id="filePreviewZoomIn" type="button" aria-label="이미지 확대">+</button><button id="filePreviewFit" type="button">화면에 맞춤</button></div>
+      <div class="file-preview-actions"><button id="filePreviewCopy" type="button" title="PNG 이미지로 복사 · 움직이는 이미지는 한 장으로 복사됩니다" hidden disabled>이미지 복사</button><a id="filePreviewDownload" class="file-preview-download" hidden>다운로드</a><a id="filePreviewDrive" target="_blank" rel="noopener noreferrer" title="Google Drive에서 열기">Drive ↗</a></div>
+    </div>
+    <p id="filePreviewFeedback" class="file-preview-feedback" role="status" hidden></p>
+    <p id="filePreviewStatus" class="file-preview-status" role="status"></p>
+    <div id="filePreviewContent" class="file-preview-content" hidden>
+      <div id="filePreviewImageArea" class="file-preview-image-area" hidden tabindex="0" role="region" aria-label="이미지 보기 · 확대한 이미지는 드래그하거나 방향키로 이동"><img id="filePreviewImage" alt="" draggable="false" /></div>
+      <div id="filePreviewTextArea" class="file-preview-text-area" hidden><article id="filePreviewRendered" class="markdown-document"></article><pre id="filePreviewSource" hidden></pre></div>
+    </div>
+  </dialog>
+
   <script src="./assets/js/drive-projects.js"></script>
   <script src="./assets/js/drive-view.js"></script>
+  <script src="./assets/js/drive-icons.js"></script>
+  <script src="./assets/vendor/marked.umd.js"></script>
+  <script src="./assets/vendor/purify.min.js"></script>
+  <script src="./assets/js/markdown-view.js"></script>
+  <script src="./assets/js/file-preview.js"></script>
   <script src="./assets/js/main.js"></script>
 </body>
 

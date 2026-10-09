@@ -5,6 +5,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 const test = require("node:test");
 const view = require("../assets/js/drive-view");
+const icons = require("../assets/js/drive-icons");
 const source = fs.readFileSync(path.join(__dirname, "../assets/js/main.js"), "utf8");
 const settle = () => new Promise((resolve) => setImmediate(resolve));
 const project = (folderPath = "", items = []) => ({ path: folderPath, items, breadcrumbs: [{ name: "게시용 공간", path: "" }], preview: false });
@@ -26,7 +27,7 @@ function harness({ fetchProject = async () => project(), clipboard = async () =>
   const location = { origin: "http://127.0.0.1:4173", search: "" };
   const pushes = [];
   const context = vm.createContext({
-    window: { OK_PLAN_VIEW: view, OK_PLAN_DRIVE: { fetchProject }, location,
+    window: { OK_PLAN_VIEW: view, OK_PLAN_ICONS: icons, OK_PLAN_DRIVE: { fetchProject }, location,
       history: { pushState(_, __, url) { pushes.push(url); location.search = new URL(url, location.origin).search; } },
       addEventListener(name, fn) { windowEvents[name] = fn; } },
     document: { getElementById: element, addEventListener(name, fn) { events[name] = fn; } },
@@ -77,7 +78,7 @@ test("HTML names and owners are escaped and copy buttons are not nested inside f
   assert.match(markup, /title="기획_/);
 });
 
-test("file and folder glyphs retain their original size and breadcrumbs have a decorative folder icon", async () => {
+test("folders have a larger distinct glyph while file icons stay compact and breadcrumbs match", async () => {
   const h = harness({ fetchProject: async () => ({
     ...project("child_folder_123", [
       { type: "folder", filename: "하위 폴더", folderPath: "child_folder_123/second_folder_123" },
@@ -87,8 +88,8 @@ test("file and folder glyphs retain their original size and breadcrumbs have a d
   }) });
   await settle();
   const markup = h.element("driveFileList").innerHTML;
-  assert.match(markup, /class="drive-file-row is-folder"[\s\S]*?drive-file-type-icon"><svg width="17" height="17"/);
-  assert.match(markup, /class="drive-file-row"[\s\S]*?drive-file-type-icon"><svg width="17" height="17"/);
+  assert.match(markup, /class="drive-file-row is-folder"[\s\S]*?data-kind="folder"[^>]*><svg width="20" height="20"/);
+  assert.match(markup, /class="drive-file-row"[\s\S]*?data-kind="html"[^>]*><svg width="17" height="17"/);
   const breadcrumbs = h.element("driveBreadcrumbs").innerHTML;
   assert.match(breadcrumbs, /^<span class="drive-breadcrumb-icon" aria-hidden="true"><svg/);
   assert.match(breadcrumbs, /data-folder-path="child_folder_123"/);

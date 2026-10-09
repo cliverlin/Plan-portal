@@ -6,12 +6,11 @@ let activeRequest = null;
 let loadVersion = 0;
 let toastTimeout;
 const view = window.OK_PLAN_VIEW;
+const icons = window.OK_PLAN_ICONS;
 const byId = (id) => document.getElementById(id);
-const fileSvg = '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/>';
-const folderSvg = '<path d="M20 20H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2Z"/>';
 const linkSvg = '<path d="M10 13a5 5 0 0 0 7 .5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>';
 const svg = (paths, size = 17) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
-const breadcrumbIcon = () => `<span class="drive-breadcrumb-icon" aria-hidden="true">${svg(folderSvg)}</span>`;
+const breadcrumbIcon = () => `<span class="drive-breadcrumb-icon" aria-hidden="true">${icons.iconFor({ type: "folder" }).svg}</span>`;
 
 function escapeHtml(value) {
     return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;")
@@ -51,21 +50,22 @@ function renderDriveFiles() {
     const folderCount = visibleItems.length - visibleFiles;
     byId("driveFileCount").textContent = `${search.trim() || owner ? `${visibleFiles}개 / ` : ""}총 ${files.length}개${folderCount ? ` · 폴더 ${folderCount}개` : ""}`;
     if (!visibleItems.length) {
-        byId("driveFileList").innerHTML = `<div class="drive-file-loading">${search.trim() || owner ? "조건에 맞는 파일이나 폴더가 없습니다." : "이 폴더에 게시된 HTML 파일이나 하위 폴더가 없습니다."}</div>`;
+        byId("driveFileList").innerHTML = `<div class="drive-file-loading">${search.trim() || owner ? "조건에 맞는 파일이나 폴더가 없습니다." : "이 폴더에 게시된 파일이나 하위 폴더가 없습니다."}</div>`;
         return;
     }
     byId("driveFileList").innerHTML = visibleItems.map((item) => {
         const isFolder = item.type === "folder";
         const filename = item.filename || item.title || "이름 없음";
+        const icon = icons.iconFor(item);
         const href = isFolder ? view.folderUrl(item.folderPath) : safeFileUrl(item.prototypeUrl);
         const date = isFolder ? "—" : item.publishedAt || item.updatedAt || "—";
         return `<div class="drive-file-row${isFolder ? " is-folder" : ""}">
-          <a class="drive-row-link" href="${escapeHtml(href || "#")}" ${isFolder ? `data-folder-path="${escapeHtml(item.folderPath)}"` : 'target="_blank" rel="noopener noreferrer"'}>
-            <span class="drive-file-main"><span class="drive-file-type-icon">${svg(isFolder ? folderSvg : fileSvg)}</span>
-              <span class="drive-file-name" title="${escapeHtml(filename)}">${escapeHtml(filename)}</span></span>
+          <a class="drive-row-link" href="${escapeHtml(href || "#")}" ${isFolder ? `data-folder-path="${escapeHtml(item.folderPath)}"` : `target="_blank" rel="noopener noreferrer"${["markdown", "image", "text"].includes(item.action) ? ` data-preview-id="${escapeHtml(item.id)}"` : ""}`}>
+            <span class="drive-file-main"><span class="drive-file-type-icon" data-kind="${icon.kind}" title="${icon.label}">${icon.svg}</span>
+              <span class="drive-file-name" title="${escapeHtml(filename)}">${escapeHtml(filename)}${item.oversized && !isFolder ? `<small class="drive-size-warning" title="${escapeHtml(`${(item.size / 1_000_000).toFixed(1)} MB · 직접 미리보기 상한 ${item.previewLimit / 1_000_000} MB 초과 · Google Drive에서 열기`)}">용량 초과</small>` : ""}</span></span>
             <span class="drive-owner-cell">${renderOwners(item)}</span>
             <span class="drive-file-date">${escapeHtml(date)}</span>
-            <span class="sr-only">${isFolder ? "폴더로 이동" : "새 탭에서 열기"}</span>
+            <span class="sr-only">${isFolder ? "폴더로 이동" : ["markdown", "image", "text"].includes(item.action) ? "미리보기" : item.action === "drive" ? "Google Drive에서 열기" : "새 탭에서 열기"}</span>
           </a>
           ${isFolder ? '<span class="drive-folder-arrow" aria-hidden="true">›</span>' : `<button type="button" class="drive-copy-link" data-copy-url="${escapeHtml(href)}" title="파일 링크 복사" aria-label="${escapeHtml(filename)} 링크 복사" ${href ? "" : "disabled"}>${svg(linkSvg)}</button>`}
         </div>`;
@@ -166,6 +166,13 @@ byId("driveRefresh").addEventListener("click", () => loadDriveFiles({ forceRefre
 document.addEventListener("click", (event) => {
     const copy = event.target.closest("[data-copy-url]");
     if (copy) { copyFileLink(copy); return; }
+    const preview = event.target.closest("[data-preview-id]");
+    if (preview && event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {
+        event.preventDefault();
+        const item = driveItems.find((value) => value.id === preview.dataset.previewId);
+        if (item) window.OK_PLAN_PREVIEW.open(item, preview);
+        return;
+    }
     const folder = event.target.closest("[data-folder-path]");
     if (!folder || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     event.preventDefault();

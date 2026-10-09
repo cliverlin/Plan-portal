@@ -31,6 +31,8 @@
 
 ## 3. Runner 사이트 배포
 
+포털·Runner의 `NODE_VERSION`은 로컬 검증과 동일한 24를 사용합니다. Netlify UI의 `AWS_LAMBDA_JS_RUNTIME` 재정의 값이 있다면 테스트 환경에서 `nodejs24.x`와 일치시키거나 기본 선택을 사용합니다. 운영 환경변수와 배포는 별도로 승인받습니다.
+
 같은 GitHub 저장소를 Netlify의 두 번째 사이트로 연결합니다.
 
 | 설정 | 값 |
@@ -46,12 +48,29 @@ Runner 사이트에 다음 환경변수를 넣습니다.
 ```text
 GOOGLE_DRIVE_API_KEY
 GOOGLE_DRIVE_FOLDER_ID=1nvXxRHtqv9ibQN-mM46o-NVW_GdhTKq5
-DRIVE_MAX_FILE_BYTES        # 선택
+DRIVE_MAX_FILE_BYTES=20000000 # 선택, 최대 20 MB(decimal). 필요 시 낮춤
 ```
 
 배포 후 `https://<runner-domain>/`에 Runner 안내 문장이 보이는지 확인합니다. 포털이 만드는 실제 파일 URL은 `/.netlify/functions/render?id=<DRIVE_FILE_ID>`입니다. 승인 폴더 밖의 ID는 403이어야 합니다.
 
+로컬 개선안에서는 `render.mjs`와 `content.mjs`가 현대식 Request/Response API로 스트리밍합니다. 이전 `render.js`를 중복 배포하지 않습니다. `content`는 MD·TXT·래스터 이미지 전용이고 HTML은 거부합니다. 포털의 `/api/file-preview` 프록시는 Drive 키 없이 이 콘텐츠를 전달합니다. 모든 콘텐츠 조회에서 폴더 경계를 다시 검증합니다.
+
+기존 `DRIVE_MAX_FILE_BYTES=5242880`이 남아 있으면 자동으로 20 MB로 올라가지 않습니다. 설정 변경·재배포는 별도 승인하에 수행합니다. 먼저 비운영 테스트 배포에서 경계 크기를 검증하고 실패하면 18 MB 또는 15 MB로 낮춥니다. [용량 검증 문서](file-size-review.md)를 확인하세요.
+
 Netlify는 monorepo의 사이트별 `netlify.toml`을 찾을 때 Package directory를 우선 확인하며, Base directory를 비우면 저장소 루트에서 공통 서버 모듈을 묶을 수 있습니다. 참고: [Netlify monorepo 설정](https://docs.netlify.com/build/configure-builds/monorepos/)
+
+### 같은 체크아웃에서 CLI 테스트 배포할 때
+
+운영 배포를 바꾸지 않으려면 `--prod` 또는 `--prod-if-unlocked`를 사용하지 않습니다. CLI 27.12.0 기준 빌드는 기본으로 실행되며 `--context deploy-preview`와 `--no-build`를 함께 사용할 수 없습니다.
+
+포털과 Runner를 연속 배포할 때는 `--skip-functions-cache`를 사용합니다. 이번 검증에서는 다른 함수 폴더를 지정해도 짧은 시간 안에 루트의 함수 manifest 캐시를 재사용해 Runner에 포털 함수가 올라가는 경우가 있었습니다. 배포 후 함수 목록에서 Runner는 `projects/content/render`, 포털은 `drive-projects/file-preview`인지 반드시 확인합니다.
+
+```text
+netlify deploy --site <RUNNER_SITE_ID> --filter runner --dir runner/public --functions runner/netlify/functions --skip-functions-cache --context deploy-preview --env DRIVE_MAX_FILE_BYTES=20000000 --env AWS_LAMBDA_JS_RUNTIME=nodejs24.x
+netlify deploy --site <PORTAL_SITE_ID> --dir dist --functions netlify/functions --skip-functions-cache --context deploy-preview --env DRIVE_RUNNER_ORIGIN=https://<RUNNER_DRAFT_HOST> --env AWS_LAMBDA_JS_RUNTIME=nodejs24.x
+```
+
+`--env`의 값은 해당 테스트 배포에만 적용합니다. Google 키는 명령·문서에 넣지 않고 기존 Netlify secret을 사용합니다. Windows에서 `netlify api --data` JSON 인자가 손상되면 `.cmd` 래퍼 대신 설치된 공식 CLI의 JS 진입점을 `node`로 실행합니다. 테스트 후 두 사이트의 운영 `published_deploy.id`가 그대로인지 확인합니다. 참고: [공식 deploy CLI](https://cli.netlify.com/commands/deploy/).
 
 ## 4. 기존 포털 사이트 설정
 

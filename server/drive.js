@@ -2,7 +2,8 @@
 
 const TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 const DRIVE_API_BASE = "https://www.googleapis.com/drive/v3";
-const DEFAULT_MAX_FILE_BYTES = 5 * 1024 * 1024;
+const { fileType, limitFor, STREAM_MAX_BYTES } = require("./file-types");
+const DEFAULT_MAX_FILE_BYTES = STREAM_MAX_BYTES;
 const FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
 const LIST_FIELDS = "nextPageToken,incompleteSearch,files(id,name,mimeType,size,modifiedTime,createdTime,description,parents,trashed,resourceKey,owners(displayName,photoLink,permissionId))";
 const HTML_MIME_TYPES = new Set([
@@ -40,8 +41,8 @@ function getDriveConfig(env = process.env, options = {}) {
   }
 
   const maxFileBytes = Number(env.DRIVE_MAX_FILE_BYTES || DEFAULT_MAX_FILE_BYTES);
-  if (!Number.isSafeInteger(maxFileBytes) || maxFileBytes <= 0) {
-    throw new ConfigurationError("DRIVE_MAX_FILE_BYTES는 양의 정수여야 합니다.");
+  if (!Number.isSafeInteger(maxFileBytes) || maxFileBytes <= 0 || maxFileBytes > STREAM_MAX_BYTES) {
+    throw new ConfigurationError(`DRIVE_MAX_FILE_BYTES는 1~${STREAM_MAX_BYTES} 사이의 정수여야 합니다.`);
   }
 
   const apiKey = String(env.GOOGLE_DRIVE_API_KEY || "").trim();
@@ -80,7 +81,7 @@ function getRunnerOrigin(env = process.env) {
 
   const runnerOrigin = new URL(rawOrigin);
   const isLocal = runnerOrigin.hostname === "localhost" || runnerOrigin.hostname === "127.0.0.1";
-  if (runnerOrigin.protocol !== "https:" && !isLocal) {
+  if (runnerOrigin.protocol !== "https:" && !(runnerOrigin.protocol === "http:" && isLocal)) {
     throw new ConfigurationError("DRIVE_RUNNER_ORIGIN은 HTTPS 주소여야 합니다.");
   }
   if (runnerOrigin.pathname !== "/" || runnerOrigin.search || runnerOrigin.hash) {
@@ -179,8 +180,8 @@ async function listFolderEntries(config, accessToken, fetchImpl = fetch, resourc
     for (const file of payload.files) {
       // Some public files hide parents. The exact parent query is the membership evidence.
       const inFolder = !file.parents?.length || file.parents.includes(config.folderId);
-      if (!file.trashed && inFolder && (file.mimeType === FOLDER_MIME_TYPE ||
-          isPublishableHtml(file, config, { folderQueryVerified: true }))) entries.set(file.id, file);
+      // List regular files even when too large to execute; never follow shortcuts.
+      if (!file.trashed && inFolder && file.mimeType !== "application/vnd.google-apps.shortcut") entries.set(file.id, file);
     }
     if (!payload.nextPageToken) return [...entries.values()];
     if (seenTokens.has(payload.nextPageToken)) break;
@@ -192,7 +193,7 @@ async function listFolderEntries(config, accessToken, fetchImpl = fetch, resourc
 
 async function listPublishedHtml(config, fetchImpl = fetch) {
   const folder = await listPublishedFolder(config, fetchImpl);
-  return folder.files.filter((file) => file.mimeType !== FOLDER_MIME_TYPE);
+  return folder.files.filter((file) => isPublishableHtml(file, config, { folderQueryVerified: true }));
 }
 
 function parseFolderPath(value = "") {
@@ -253,7 +254,7 @@ async function getPublishedHtml(fileId, config, fetchImpl = fetch, resourceKey =
   const approvedFolder = await resolvePublishedFolder(config, accessToken, fetchImpl, folderPath);
   const metadata = approvedFolder.files.find((file) => file.id === fileId && file.mimeType !== FOLDER_MIME_TYPE);
 
-  if (!metadata) {
+  if (!metadata || !isPublishableHtml(metadata, config, { folderQueryVerified: true })) {
     throw new DriveRequestError("이 파일은 승인된 게시 폴더의 HTML이 아닙니다.", 403);
   }
 
@@ -270,6 +271,26 @@ async function getPublishedHtml(fileId, config, fetchImpl = fetch, resourceKey =
   }
 
   return { metadata, content };
+}
+
+async function openPublishedFile(fileId, config, fetchImpl = fetch, resourceKey = "", folderPath = "", mode = "html") {
+  assertValidFileId(fileId);
+  assertValidResourceKey(resourceKey);
+  parseFolderPath(folderPath);
+  const accessToken = await getAccessToken(config, fetchImpl);
+  const folder = await resolvePublishedFolder(config, accessToken, fetchImpl, folderPath);
+  const metadata = folder.files.find((file) => file.id === fileId && file.mimeType !== FOLDER_MIME_TYPE);
+  if (!metadata) throw new DriveRequestError("게시용 공간에서 파일을 확인할 수 없습니다.", 403);
+  const type = fileType(metadata);
+  if (mode === "html" ? type.kind !== "html" : !["image", "markdown", "text"].includes(type.kind)) {
+    throw new DriveRequestError("이 형식은 직접 미리보기를 지원하지 않습니다.", 415);
+  }
+  const size = Number(metadata.size);
+  const maxBytes = limitFor(type.kind, config);
+  if (!Number.isSafeInteger(size) || size <= 0) throw new DriveRequestError("파일 크기를 확인할 수 없습니다.", 415);
+  if (size > maxBytes) throw new DriveRequestError(`미리보기 제한 ${maxBytes / 1_000_000} MB를 초과했습니다. Google Drive에서 열어 주세요.`, 413);
+  const response = await driveFetch(`/files/${encodeURIComponent(fileId)}?alt=media&supportsAllDrives=true`, config, accessToken, fetchImpl, resourceKey || metadata.resourceKey);
+  return { response, metadata, type, maxBytes };
 }
 
 function safeOwners(owners) {
@@ -297,21 +318,35 @@ function toPortalProject(files, config, folder = {}) {
     path: folder.path || "",
     breadcrumbs: folder.breadcrumbs || [{ name: "게시용 공간", path: "" }],
     preview: Boolean(folder.preview),
-    items: files.map((file) => ({
+    items: files.map((file) => {
+      const type = fileType(file);
+      const maxBytes = file.previewLimit || limitFor(type.kind, { maxFileBytes: DEFAULT_MAX_FILE_BYTES });
+      const size = Number(file.size || 0);
+      const oversized = type.kind !== "drive" && size > maxBytes;
+      const parameters = new URLSearchParams({ id: file.id });
+      if (file.resourceKey) parameters.set("resourceKey", file.resourceKey);
+      if (folder.path) parameters.set("path", folder.path);
+      const driveUrl = new URL(`https://drive.google.com/file/d/${encodeURIComponent(file.id)}/view`);
+      if (file.resourceKey) driveUrl.searchParams.set("resourcekey", file.resourceKey);
+      const renderUrl = `${config.runnerOrigin}/.netlify/functions/render?${parameters}`;
+      const action = oversized || type.kind === "drive" ? "drive" : type.kind;
+      return ({
       id: file.id,
       type: file.mimeType === FOLDER_MIME_TYPE ? "folder" : "file",
       folderPath: file.mimeType === FOLDER_MIME_TYPE ? [folder.path, file.id].filter(Boolean).join("/") : "",
       owners: safeOwners(file.owners),
       title: file.name.replace(/\.html?$/i, ""),
       description: file.description || "Google Drive 게시 폴더에서 자동 등록된 프로토타입",
-      prototypeUrl: `${config.runnerOrigin}/.netlify/functions/render?id=${encodeURIComponent(file.id)}${
-        file.resourceKey ? `&resourceKey=${encodeURIComponent(file.resourceKey)}` : ""
-      }${folder.path ? `&path=${encodeURIComponent(folder.path)}` : ""}`,
+      prototypeUrl: action === "html" ? renderUrl : driveUrl.href,
+      driveUrl: driveUrl.href,
+      previewUrl: `/api/file-preview?${parameters}`,
+      action, size, previewLimit: maxBytes, oversized,
       filename: file.name,
+      mimeType: file.mimeType,
       publishedAt: formatKoreanDateTime(file.createdTime || file.modifiedTime),
       updatedAt: formatKoreanDateTime(file.modifiedTime),
       source: "google-drive",
-    })),
+    }); }),
   };
 }
 
@@ -340,6 +375,7 @@ module.exports = {
   getDriveConfig,
   getRunnerOrigin,
   getPublishedHtml,
+  openPublishedFile,
   isPublishableHtml,
   listPublishedHtml,
   listPublishedFolder,

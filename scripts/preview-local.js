@@ -5,7 +5,11 @@ const http = require("node:http");
 const path = require("node:path");
 const { createHandler } = require("../netlify/functions/drive-projects");
 const { createHandler: createRunnerList } = require("../runner/netlify/functions/projects");
-const { createHandler: createRunnerRender } = require("../runner/netlify/functions/render");
+const { createHandler: createRunnerRender } = require("../server/file-response");
+const { createHandler: createPreviewProxy } = require("../server/preview-proxy");
+const { Readable } = require("node:stream");
+const { once } = require("node:events");
+require("./prepare-vendor").prepareVendor();
 const { ROOT, previewFetch, previewPhoto, avatarSvg } = require("./preview-data");
 
 const root = path.resolve(__dirname, "..");
@@ -22,6 +26,19 @@ if (!runnerOrigin) {
 const listDriveProjects = createHandler({
   env: { DRIVE_RUNNER_ORIGIN: runnerOrigin },
 });
+const previewFile = createPreviewProxy({ env: { DRIVE_RUNNER_ORIGIN: runnerOrigin } });
+async function sendWebResponse(request, response, handler, origin) {
+  const abort = new AbortController();
+  response.on("close", () => { if (!response.writableFinished) abort.abort(); });
+  try {
+    const result = await handler(new Request(new URL(request.url, origin), { method: request.method, signal: abort.signal }));
+    response.writeHead(result.status, Object.fromEntries(result.headers));
+    if (result.body) {
+      for await (const chunk of Readable.fromWeb(result.body)) if (!response.write(chunk)) await once(response, "drain", { signal: abort.signal });
+    }
+    response.end();
+  } catch { response.destroy(); }
+}
 
 const contentTypes = {
   ".css": "text/css; charset=utf-8",
@@ -51,6 +68,16 @@ function resolvePublicPath(urlPath) {
 
 const server = http.createServer(async (request, response) => {
   try {
+  if (request.url.split("?")[0] === "/api/file-preview") {
+    await sendWebResponse(request, response, previewFile, `http://127.0.0.1:${port}`);
+    return;
+  }
+  // Explicit local-only page; do not expose the rest of scripts/ or ship it in dist/.
+  if (request.url.split("?")[0] === "/__preview/icons") {
+    response.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+    fs.createReadStream(path.join(__dirname, "preview-icons.html")).pipe(response);
+    return;
+  }
   if (mode === "--demo" && /^\/__preview\/avatar\/(clive|jiyoon)$/.test(request.url)) {
     response.writeHead(200, { "content-type": "image/svg+xml", "cache-control": "no-store" });
     response.end(avatarSvg(request.url.split("/").at(-1)));
@@ -106,10 +133,14 @@ if (useLocalRunner) {
   const options = { env, ...(mode === "--demo" ? { fetchImpl: previewFetch } : {}) };
   const list = createRunnerList(options);
   const render = createRunnerRender(options);
+  const content = createRunnerRender({ ...options, mode: "preview" });
   const runner = http.createServer(async (request, response) => {
     const url = new URL(request.url, `http://127.0.0.1:${runnerPort}`);
-    const handler = url.pathname === "/.netlify/functions/projects" ? list
-      : url.pathname === "/.netlify/functions/render" ? render : null;
+    if (["/.netlify/functions/render", "/.netlify/functions/content"].includes(url.pathname)) {
+      await sendWebResponse(request, response, url.pathname.endsWith("/render") ? render : content, `http://127.0.0.1:${runnerPort}`);
+      return;
+    }
+    const handler = url.pathname === "/.netlify/functions/projects" ? list : null;
     if (!handler) { response.writeHead(404); response.end("Not found"); return; }
     const result = await handler({ httpMethod: request.method, queryStringParameters: Object.fromEntries(url.searchParams) });
     response.writeHead(result.statusCode, result.headers);

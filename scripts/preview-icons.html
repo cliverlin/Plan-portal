@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>파일 아이콘 · 로컬 미리보기</title>
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <style>
+    .icon-preview { max-width: 760px; margin: 64px auto; padding: 0 24px; }
+    .icon-preview h1 { font-size: 24px; margin-bottom: 14px; }
+    .icon-preview p { color: var(--text-sub); font-size: 14px; line-height: 1.7; margin-bottom: 28px; }
+    .icon-example { display: grid; grid-template-columns: minmax(0, 1fr) 150px; align-items: center; min-height: 60px; padding: 10px 18px; }
+    .icon-example .icon-label { text-align: right; font-size: 12px; color: var(--text-muted); }
+    .icon-preview > a { display: inline-block; margin-top: 24px; color: var(--primary); }
+    @media (max-width: 480px) { .icon-example { grid-template-columns: minmax(0, 1fr); gap: 8px; } .icon-example .icon-label { text-align: left; padding-left: 38px; } }
+  </style>
+</head>
+<body>
+  <main class="icon-preview">
+    <h1>폴더와 파일 아이콘</h1>
+    <p>로컬 아이콘 시안입니다. 폴더는 금색의 채워진 형태로, 파일은 작은 선 아이콘으로 구분합니다.<br />아래 예시 파일은 실제 게시물이 아니며, HTML 외 파일의 목록·미리보기 지원은 아직 적용하지 않았습니다.</p>
+    <div class="drive-file-list" id="iconExamples"></div>
+    <a href="/">포털 화면으로 돌아가기 →</a>
+  </main>
+  <script src="/assets/js/drive-icons.js"></script>
+  <script>
+    const examples = [
+      { type: "folder", filename: "제품 기획" },
+      { filename: "화면_프로토타입.html" }, { filename: "기획_가이드.md" },
+      { filename: "화면_디자인.png" }, { filename: "서비스_기획서.docx" },
+      { filename: "기획_발표.pptx" }, { filename: "일정_관리.xlsx" },
+      { filename: "검토_자료.pdf" }, { filename: "회의_메모.txt" }, { filename: "첨부_자료.zip" },
+    ];
+    const list = document.getElementById("iconExamples");
+    for (const item of examples) {
+      const icon = window.OK_PLAN_ICONS.iconFor(item);
+      const row = document.createElement("div");
+      row.className = "drive-file-row icon-example" + (item.type === "folder" ? " is-folder" : "");
+      row.innerHTML = `<span class="drive-file-main"><span class="drive-file-type-icon" data-kind="${icon.kind}">${icon.svg}</span><span class="drive-file-name"></span></span><span class="icon-label"></span>`;
+      row.querySelector(".drive-file-name").textContent = item.filename;
+      row.querySelector(".icon-label").textContent = icon.label;
+      list.append(row);
+    }
+  </script>
+</body>
+</html>

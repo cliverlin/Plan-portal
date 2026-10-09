@@ -3,8 +3,9 @@
 const {
   ConfigurationError,
   getDriveConfig,
-  getPublishedHtml,
-} = require("../../../server/drive");
+  openPublishedFile,
+} = require("./drive");
+const { boundedStream, requestDeadline } = require("./streams");
 
 const SECURITY_HEADERS = {
   "cache-control": "private, no-store",
@@ -31,41 +32,40 @@ const SECURITY_HEADERS = {
 };
 
 function textError(statusCode, message) {
-  return {
-    statusCode,
-    headers: { ...SECURITY_HEADERS, "content-type": "text/plain; charset=utf-8" },
-    body: message,
-  };
+  return new Response(message, { status: statusCode, headers: { ...SECURITY_HEADERS, "content-type": "text/plain; charset=utf-8" } });
 }
 
 function createHandler(options = {}) {
   const env = options.env || process.env;
   const fetchImpl = options.fetchImpl || fetch;
 
-  return async function handler(event = {}) {
-    if (event.httpMethod && event.httpMethod !== "GET") {
+  return async function handler(request) {
+    if (request.method !== "GET") {
       return textError(405, "GET 요청만 허용됩니다.");
     }
 
+    const deadline = requestDeadline(request.signal, options.timeoutMs);
     try {
       const config = getDriveConfig(env);
-      const fileId = event.queryStringParameters && event.queryStringParameters.id;
-      const resourceKey = event.queryStringParameters && event.queryStringParameters.resourceKey;
-      const folderPath = event.queryStringParameters?.path || "";
-      const { content } = await getPublishedHtml(fileId, config, fetchImpl, resourceKey, folderPath);
-      return { statusCode: 200, headers: SECURITY_HEADERS, body: content };
+      const params = new URL(request.url).searchParams;
+      const mode = options.mode || "html";
+      const scopedFetch = (url, init = {}) => fetchImpl(url, { ...init, signal: deadline.signal });
+      const { response, metadata, type, maxBytes } = await openPublishedFile(params.get("id"), config, scopedFetch, params.get("resourceKey") || "", params.get("path") || "", mode);
+      if (!response.body) throw new Error("파일 본문이 없습니다.");
+      const body = boundedStream(response.body, maxBytes, { expectedBytes: Number(metadata.size), ...deadline });
+      return new Response(body, { headers: { ...SECURITY_HEADERS, "content-type": type.mime, "x-preview-kind": type.kind } });
     } catch (error) {
+      deadline.finish();
       if (error instanceof ConfigurationError) {
         console.error("Drive runner is not configured:", error.message);
         return textError(503, "HTML 실행 서비스가 아직 설정되지 않았습니다.");
       }
       console.error("Failed to render a Drive HTML file:", error);
-      const status = [400, 403, 404, 413].includes(error.status) ? error.status : 502;
-      return textError(status, error.message || "HTML 파일을 불러오지 못했습니다.");
+      const status = deadline.signal.aborted ? 504 : [400, 403, 404, 413, 415].includes(error.status) ? error.status : 502;
+      return textError(status, status === 504 ? "파일 조회 제한 시간이 초과되었습니다." : error.message || "파일을 불러오지 못했습니다.");
     }
   };
 }
 
 exports.SECURITY_HEADERS = SECURITY_HEADERS;
 exports.createHandler = createHandler;
-exports.handler = createHandler();
